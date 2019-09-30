@@ -15,7 +15,6 @@ def get_session(sess):
     return session
 
 
-step_size = 8
 IMG_SIZE_ALEXNET = 227
 validating_size = 40
 nodes_fc1 = 4096
@@ -30,19 +29,24 @@ class Worker:
         self.master_queue = master_queue
         self.cluster = cluster
         self.idx = worker_idx
+        self.job_name = job_name
 
+
+        self.step_size = 8
+        self.log(cluster)
+        self.log(self.idx)
         self.server = tf.distribute.Server(cluster,
                          job_name="worker",
                          task_index=self.idx)
 
-        train_dir = os.path.join(os.getcwd(), "checkpoints", job_name)
+        train_dir = os.path.join(os.getcwd(), "checkpoints", self.job_name)
         if not os.path.exists(train_dir):
             os.makedirs(train_dir)
         self.train_folder = train_dir
 
-        self.log(self.server)
-
+        # Load training and test data.
         self.load_data()
+        # Define model layers.
         self.build_model()
 
         # The StopAtStepHook handles stopping after running given steps.
@@ -63,11 +67,15 @@ class Worker:
             inter_op_parallelism_threads=1)
 
     def run(self):
-        while True:
-            task = self.queue.get()
-            if task == "END":
-                break
-            self.master_queue.put(f"Worker {self.idx} has completed {task}.")
+        # while True:
+        #     task = self.queue.get()
+        #     if task == "END":
+        #         break
+        #     self.master_queue.put(f"Worker {self.idx} has completed {task}.")
+
+        self.train()
+        self.cross_validate()
+        self.test()
 
     def train(self):
         self.log("Starting training.")
@@ -76,46 +84,132 @@ class Worker:
         with tf.train.MonitoredTrainingSession(
                 master=self.server.target,
                 is_chief=(self.idx == 0),
-                checkpoint_dir=train_folder,
-                hooks=hooks,
-                config=session_conf) as mon_sess:
+                checkpoint_dir=self.train_folder,
+                hooks=self.hooks,
+                config=self.session_conf) as mon_sess:
 
-            for j in range(0, steps - remaining, step_size):
+            for j in range(0, self.steps - self.remaining, self.step_size):
                 #Feeding step_size-amount data with 0.5 keeping probabilities on DROPOUT LAYERS
                 _, c = mon_sess.run(
-                    [train_op, cross_entropy],
+                    [self.train_op, self.cross_entropy],
                     feed_dict={
-                        x: X[j:j + step_size],
-                        y_true: Y[j:j + step_size],
+                        x: self.X[j:j + self.step_size],
+                        y_true: self.Y[j:j + self.step_size],
                         hold_prob1: 0.5,
                         hold_prob2: 0.5
                     })
 
                 if (global_step.eval(session=mon_sess) % 20 == 0):
-                    with open('./log_folder/' + j_name + '_log', 'a') as f:
+                    with open('./log_folder/' + self.job_name + '_log', 'a') as f:
                         f.write('\nstep: ' + str(j) + "\tglobal_step: " +
-                                str(global_step.eval(session=mon_sess)))
+                                str(self.global_step.eval(session=mon_sess)))
 
-            saver.save(get_session(mon_sess),
-                       train_folder + "/latest_model_" + j_name + ".ckpt")
+            self.saver.save(get_session(mon_sess),
+                       self.train_folder + "/latest_model_" + self.job_name + ".ckpt")
 
         self.log("Training finished.")
 
     def cross_validate(self):
-        pass
+
+        self.log("Starting cross validation.")
+
+        with tf.Session(target=self.server.target) as sess:
+            with open('./log_folder/' + self.job_name + '_log', 'a') as f:
+                f.write('\n\nevaluating the accuracy on the validation set')
+            self.saver.restore(sess,
+                          self.train_folder + "/latest_model_" + self.job_name + ".ckpt")
+            cv_auc_list = []
+            cv_acc_list = []
+            cv_loss_list = []
+            for v in range(0,
+                           len(self.cv_x) - int(len(self.cv_x) % validating_size),
+                           validating_size):
+
+                acc_on_cv, loss_on_cv, preds = sess.run(
+                    [self.acc, self.cross_entropy,
+                     tf.nn.softmax(self.y_pred)],
+                    feed_dict={
+                        x: self.cv_x[v:v + validating_size],
+                        y_true: self.cv_y[v:v + validating_size],
+                        hold_prob1: 1.0,
+                        hold_prob2: 1.0
+                    })
+
+                auc_on_cv = roc_auc_score(self.cv_y[v:v + validating_size], preds)
+                cv_acc_list.append(acc_on_cv)
+                cv_auc_list.append(auc_on_cv)
+                cv_loss_list.append(loss_on_cv)
+
+            acc_cv_ = round(np.mean(cv_acc_list), 5)
+            auc_cv_ = round(np.mean(cv_auc_list), 5)
+            loss_cv_ = round(np.mean(cv_loss_list), 5)
+            self.acc_list.append(acc_cv_)
+            self.auc_list.append(auc_cv_)
+            self.loss_list.append(loss_cv_)
+            with open('./log_folder/' + self.job_name + '_log', 'a') as f:
+                f.write("\nAccuracy:" + str(acc_cv_) + "\tLoss:" +
+                        str(loss_cv_) + "\tAUC:" + str(auc_cv_))
+
+        self.log("Cross validation finished.")
 
     def test(self):
-        pass
+        with tf.Session(target=self.server.target) as sess:
+            with open('./log_folder/' + self.job_name + '_log', 'a') as f:
+                f.write('\n\ntest the model accuracy after training')
+
+            self.saver.restore(sess,
+                          self.train_folder + "/latest_model_" + self.job_name + ".ckpt")
+            test_auc_list = []
+            test_acc_list = []
+            test_loss_list = []
+            for v in range(0,
+                           len(self.test_x) - int(len(self.test_x) % validating_size),
+                           validating_size):
+
+                acc_on_test, loss_on_test, preds = sess.run(
+                    [self.acc, self.cross_entropy,
+                     tf.nn.softmax(self.y_pred)],
+                    feed_dict={
+                        x: self.test_x[v:v + validating_size],
+                        y_true: self.test_y[v:v + validating_size],
+                        hold_prob1: 1.0,
+                        hold_prob2: 1.0
+                    })
+
+                auc_on_test = roc_auc_score(self.test_y[v:v + validating_size],
+                                            preds)
+                test_acc_list.append(acc_on_test)
+                test_auc_list.append(auc_on_test)
+                test_loss_list.append(loss_on_test)
+
+            test_acc_ = round(np.mean(test_acc_list), 5)
+            test_auc_ = round(np.mean(test_auc_list), 5)
+            test_loss_ = round(np.mean(test_loss_list), 5)
+            with open('./log_folder/' + self.job_name + '_log', 'a') as f:
+                f.write("\nTest Results are below:")
+                f.write("\nAccuracy: " + str(test_acc_) + "\tLoss: " +
+                        str(test_loss_) + "\tAUC: " + str(test_auc_))
+
+            with open('./loss_folder/loss_' + self.job_name, 'w') as f:
+                f.write(str(test_loss_))
+            with open('./accuracy_folder/accuracy_' + self.job_name, 'w') as f:
+                f.write(str(test_acc_))
 
     def load_data(self):
 
         self.log("Loading data.")
 
+        data_dir = os.path.join(os.getcwd(), 'datasets')
+        if not os.path.exists(data_dir):
+            # Then unzip.
+            with zipfile.ZipFile("datasets.zip", "r") as zip_ref:
+                zip_ref.extractall()
+
         #Reading .npy files
         train_data = np.load(
-            os.path.join(os.getcwd(), 'datasets', 'train_data_mc.npy'))
+            os.path.join(data_dir, 'train_data_mc.npy'))
         test_data = np.load(
-            os.path.join(os.getcwd(), 'datasets', 'test_data_mc.npy'))
+            os.path.join(data_dir, 'test_data_mc.npy'))
 
         #In order to implement ALEXNET, we are resizing them to (227,227,3)
         for i in range(len(train_data)):
@@ -130,7 +224,7 @@ class Worker:
         cv = train_data[4800:]
 
         self.steps = len(train)
-        self.remaining = self.steps % step_size
+        self.remaining = self.steps % self.step_size
 
         self.X = np.array([i[0] for i in train]).reshape(-1, IMG_SIZE_ALEXNET,
                                                     IMG_SIZE_ALEXNET, 3)
