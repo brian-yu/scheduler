@@ -155,6 +155,9 @@ class Worker:
         self.log("Cross validation finished.")
 
     def test(self):
+
+        self.log("Starting testing.")
+
         with tf.Session(target=self.server.target) as sess:
             with open('./log_folder/' + self.job_name + '_log', 'a') as f:
                 f.write('\n\ntest the model accuracy after training')
@@ -196,6 +199,8 @@ class Worker:
                 f.write(str(test_loss_))
             with open('./accuracy_folder/accuracy_' + self.job_name, 'w') as f:
                 f.write(str(test_acc_))
+
+        self.log("Testing finished.")
 
     def load_data(self):
 
