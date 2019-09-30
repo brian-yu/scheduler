@@ -41,6 +41,9 @@ class Worker:
                          job_name="worker",
                          task_index=self.idx)
 
+
+        ### Move this to be a function called in train, cross_validate, and test
+        # We want one worker to be able to execute a task from any job.
         train_dir = os.path.join(os.getcwd(), "checkpoints", self.job_name)
         if not os.path.exists(train_dir):
             os.makedirs(train_dir)
