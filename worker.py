@@ -7,6 +7,8 @@ import zipfile
 import tensorflow as tf
 import numpy as np
 
+from cluster import get_cluster
+
 def get_session(sess):
     session = sess
     while type(session).__name__ != 'Session':
@@ -93,13 +95,13 @@ class Worker:
                 _, c = mon_sess.run(
                     [self.train_op, self.cross_entropy],
                     feed_dict={
-                        x: self.X[j:j + self.step_size],
-                        y_true: self.Y[j:j + self.step_size],
-                        hold_prob1: 0.5,
-                        hold_prob2: 0.5
+                        self.x: self.X[j:j + self.step_size],
+                        self.y_true: self.Y[j:j + self.step_size],
+                        self.hold_prob1: 0.5,
+                        self.hold_prob2: 0.5
                     })
 
-                if (global_step.eval(session=mon_sess) % 20 == 0):
+                if (self.global_step.eval(session=mon_sess) % 20 == 0):
                     with open('./log_folder/' + self.job_name + '_log', 'a') as f:
                         f.write('\nstep: ' + str(j) + "\tglobal_step: " +
                                 str(self.global_step.eval(session=mon_sess)))
@@ -129,10 +131,10 @@ class Worker:
                     [self.acc, self.cross_entropy,
                      tf.nn.softmax(self.y_pred)],
                     feed_dict={
-                        x: self.cv_x[v:v + validating_size],
-                        y_true: self.cv_y[v:v + validating_size],
-                        hold_prob1: 1.0,
-                        hold_prob2: 1.0
+                        self.x: self.cv_x[v:v + validating_size],
+                        self.y_true: self.cv_y[v:v + validating_size],
+                        self.hold_prob1: 1.0,
+                        self.hold_prob2: 1.0
                     })
 
                 auc_on_cv = roc_auc_score(self.cv_y[v:v + validating_size], preds)
@@ -170,10 +172,10 @@ class Worker:
                     [self.acc, self.cross_entropy,
                      tf.nn.softmax(self.y_pred)],
                     feed_dict={
-                        x: self.test_x[v:v + validating_size],
-                        y_true: self.test_y[v:v + validating_size],
-                        hold_prob1: 1.0,
-                        hold_prob2: 1.0
+                        self.x: self.test_x[v:v + validating_size],
+                        self.y_true: self.test_y[v:v + validating_size],
+                        self.hold_prob1: 1.0,
+                        self.hold_prob2: 1.0
                     })
 
                 auc_on_test = roc_auc_score(self.test_y[v:v + validating_size],
@@ -375,8 +377,8 @@ class Worker:
             s_fc1 = tf.nn.relu(s_fc1)
 
             #Dropout Layer 1
-            hold_prob1 = tf.placeholder(tf.float32)
-            s_fc1 = tf.nn.dropout(s_fc1, keep_prob=hold_prob1)
+            self.hold_prob1 = tf.placeholder(tf.float32)
+            s_fc1 = tf.nn.dropout(s_fc1, keep_prob=self.hold_prob1)
 
             self.log(s_fc1)
 
@@ -393,8 +395,8 @@ class Worker:
             self.log(s_fc2)
 
             #Dropout Layer 2
-            hold_prob2 = tf.placeholder(tf.float32)
-            s_fc2 = tf.nn.dropout(s_fc2, keep_prob=hold_prob1)
+            self.hold_prob2 = tf.placeholder(tf.float32)
+            s_fc2 = tf.nn.dropout(s_fc2, keep_prob=self.hold_prob1)
 
             ##Fully Connected Layer 3
             #Weights for FC Layer 3
@@ -424,3 +426,26 @@ class Worker:
     def log(self, s):
         print(f"===== WORKER_{self.idx}:", end=" ")
         print(s)
+
+
+
+def main():
+
+    if len(sys.argv) < 4:
+        print("Please specify num_ps, num_workers, and worker_idx.")
+        return
+
+    num_ps = int(sys.argv[1])
+    num_workers = int(sys.argv[2])
+    worker_idx = int(sys.argv[3])
+
+    print(f"{num_ps} ps and {num_workers} workers.")
+
+    cluster = get_cluster(num_ps, num_workers)
+    print(cluster)
+
+    worker = Worker(None, None, cluster, worker_idx)
+    worker.run()
+
+if __name__ == "__main__":
+    main()
