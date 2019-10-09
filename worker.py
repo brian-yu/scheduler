@@ -41,14 +41,6 @@ class Worker:
                          job_name="worker",
                          task_index=self.idx)
 
-
-        ### Move this to be a function called in train, cross_validate, and test
-        # We want one worker to be able to execute a task from any job.
-        train_dir = os.path.join(os.getcwd(), "checkpoints", self.job_name)
-        if not os.path.exists(train_dir):
-            os.makedirs(train_dir)
-        self.train_folder = train_dir
-
         # Load training and test data.
         self.load_data()
         # Define model layers.
@@ -82,8 +74,9 @@ class Worker:
         self.cross_validate()
         self.test()
 
-    def train(self):
+    def train(self, job_name="default"):
         self.log("Starting training.")
+        self.set_job(job_name)
 
         #while num_epoch < epochs:
         with tf.train.MonitoredTrainingSession(
@@ -114,9 +107,10 @@ class Worker:
 
         self.log("Training finished.")
 
-    def cross_validate(self):
+    def cross_validate(self, job_name="default"):
 
         self.log("Starting cross validation.")
+        self.set_job(job_name)
 
         with tf.Session(target=self.server.target) as sess:
             with open('./log_folder/' + self.job_name + '_log', 'a') as f:
@@ -157,9 +151,10 @@ class Worker:
 
         self.log("Cross validation finished.")
 
-    def test(self):
+    def test(self, job_name="default"):
 
         self.log("Starting testing.")
+        self.set_job(job_name)
 
         with tf.Session(target=self.server.target) as sess:
             with open('./log_folder/' + self.job_name + '_log', 'a') as f:
@@ -423,7 +418,7 @@ class Worker:
 
             self.global_step = tf.train.get_or_create_global_step()
 
-            self.train_op = tf.train.AdagradOptimizer(0.00001).minimize(
+            self.train_op = tf.train.AdamOptimizer(0.00001).minimize(
                 self.cross_entropy, global_step=self.global_step)
 
             matches = tf.equal(tf.argmax(self.y_pred, 1), tf.argmax(self.y_true, 1))
@@ -434,6 +429,15 @@ class Worker:
     def log(self, s):
         print(f"===== WORKER_{self.idx}:", end=" ")
         print(s)
+
+    def set_job(self, job_name):
+        ### Move this to be a function called in train, cross_validate, and test
+        # We want one worker to be able to execute a task from any job.
+        self.job_name = job_name
+        train_dir = os.path.join(os.getcwd(), "checkpoints", self.job_name)
+        if not os.path.exists(train_dir):
+            os.makedirs(train_dir)
+        self.train_folder = train_dir
 
 
 
