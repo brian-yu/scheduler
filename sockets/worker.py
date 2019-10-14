@@ -7,9 +7,6 @@ from threading import Thread, Lock
 class Worker:
 
     def __init__(self, host='', port=50000):
-        self.num_samples = 1200
-        self.curr_sample = 0
-        self.completed = False
         self.status = "FREE"
 
         self.host = host
@@ -23,55 +20,46 @@ class Worker:
         self.status_lock = Lock()
 
 
-    def train(self, batch_size):
+    # TODO: train by job and allow async training of jobs.
+    def train(self, job_name, lo, hi):
         with self.status_lock:
             with self.print_lock:
                 print(f"Status: {self.status}")
             if self.status == "BUSY":
-                return self.completed
+                return
             self.status = "BUSY"
 
-        begin = self.curr_sample
-        end = min(self.num_samples, begin + batch_size)
-
         with self.print_lock:
-            print(f"Begin training samples [{begin}, {end}).")
+            print(f"Began training job {job_name} on samples [{lo}, {hi}].")
 
-        for i in range(begin, min(self.num_samples, begin + batch_size)):
-            self.curr_sample += 1
-
-        time.sleep(5)
-
-        if end == self.num_samples:
-            self.completed = True
+        # Simulate training time
+        time.sleep(3)
         
         with self.print_lock:
-            print(f"Finish training samples [{begin}, {end}).")
-            print(f"\t Completed? {self.completed}")
+            print(f"Finished training job {job_name} on samples [{lo}, {hi}].")
 
         with self.status_lock:
             self.status = "FREE"
-        return self.completed
 
     def receive(self, message):
 
         tokens = message.split()
         command = tokens[0]
-        with self.print_lock:
-            print(tokens)
 
         if command == "RESET":
             self = self.__init__(self.host, self.port)
             return "True"
         elif command == "TRAIN":
-            batch_size = int(tokens[1])
-            self.train(batch_size)
-            return str(self.completed)
+            job_name = tokens[1]
+            lo = int(tokens[2])
+            hi = int(tokens[3])
+            self.train(job_name, lo, hi)
+            return str(self.status)
         else: # POLL
             status = None
             with self.status_lock:
                 status = self.status
-            return f"{status} {self.completed}"
+            return f"{status}"
 
     def handleClient(self, connection):
         while True:

@@ -2,7 +2,10 @@ from socket import socket, AF_INET, SOCK_STREAM # portable socket api
 from threading import Thread
 import sys
 from time import sleep
+import argparse
 from collections import deque
+
+from cluster import get_worker_addresses
 
 class WorkerTracker:
     def __init__(self, address_str):
@@ -54,6 +57,7 @@ class Job:
         self.num_samples = num_samples
         self.batch_size = batch_size ### Multiple of 8
 
+        # May want to shuffle this so that earlier samples are not favored.
         self.tasks = [Task(self, i, min(self.num_samples, i + self.batch_size) - 1) for i in range(0, self.num_samples, self.batch_size)] * epochs
 
         self.completed = False
@@ -78,7 +82,7 @@ class Master:
             for worker_id, worker in enumerate(self.workers):
 
                 worker_status = worker.status()
-                print(f"Worker {worker_id} is {worker_status}")
+                # print(f"Worker {worker_id} is {worker_status}")
                 if worker_status == "BUSY":
                     continue
 
@@ -91,7 +95,7 @@ class Master:
                     task = self.task_queue.popleft()
                     worker.task = task
                     worker.train(task)
-                    print(f"Running {task.job.job_name}, [{task.lo}, {task.hi}] on worker {worker_id}.")
+                    print(f"Running ({task.job.job_name}, [{task.lo}, {task.hi}]) on worker {worker_id}.")
             sleep(1)
         print("Finished training.")
 
@@ -101,7 +105,14 @@ class Master:
 
 if __name__ == "__main__":
 
-    worker_addrs = sys.argv[1:]
+    parser = argparse.ArgumentParser(description='Master.')
+    parser.add_argument('num_workers', type=int, help='number of workers')
+    args = parser.parse_args()
+    print(args)
+
+    print(f"{args.num_workers} workers.")
+
+    worker_addrs = get_worker_addresses(args.num_workers)
 
     jobs = [Job(job_name=f"job_{i}") for i in range(3)]
 

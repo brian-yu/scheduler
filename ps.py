@@ -1,5 +1,6 @@
 import tensorflow as tf
 import sys
+import argparse
 
 from cluster import get_cluster
 
@@ -23,20 +24,21 @@ class ParameterServer:
 
 def main():
 
-    if len(sys.argv) < 4:
-        print("Please specify num_ps, num_workers, and ps_idx.")
-        return
 
-    num_ps = int(sys.argv[1])
-    num_workers = int(sys.argv[2])
-    ps_idx = int(sys.argv[3])
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('num_ps', type=int, help='number of parameter servers')
+    parser.add_argument('num_workers', type=int, help='number of workers')
+    parser.add_argument('ps_index', type=int, help='ps index')
 
-    print(f"{num_ps} ps and {num_workers} workers.")
+    args = parser.parse_args()
+    print(args)
 
-    cluster = get_cluster(num_ps, num_workers)
+    print(f"{args.num_ps} ps and {args.num_workers} workers.")
+
+    cluster = get_cluster(args.num_ps, args.num_workers)
     print(cluster)
 
-    server = tf.train.Server(cluster, job_name="ps", task_index=ps_idx)
+    server = tf.train.Server(cluster, job_name="ps", task_index=args.ps_index)
 
     server.join()
 

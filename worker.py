@@ -6,8 +6,11 @@ import os
 import zipfile
 import tensorflow as tf
 import numpy as np
+import time
+from socket import socket, AF_INET, SOCK_STREAM
+from threading import Thread, Lock
 
-from cluster import get_cluster
+from cluster import get_cluster, get_worker_port
 
 def get_session(sess):
     session = sess
@@ -26,13 +29,21 @@ output_classes = 4
 TRAIN_DIR = os.getcwd()
 
 class Worker:
-    def __init__(self, queue, master_queue, cluster, worker_idx, job_name="default"):
-        self.queue = queue
-        self.master_queue = master_queue
+    def __init__(self, host, port, cluster, worker_idx, job_name="default"):
+        self.host = host
+        self.port = port
         self.cluster = cluster
         self.idx = worker_idx
         self.job_name = job_name
 
+        self.status = "FREE"
+
+        self.sock = socket(AF_INET, SOCK_STREAM)
+        self.sock.bind((self.host, self.port))
+        self.sock.listen(10)
+
+        self.print_lock = Lock()
+        self.status_lock = Lock()
 
         self.step_size = 8
         self.log(cluster)
@@ -44,7 +55,7 @@ class Worker:
         # Load training and test data.
         self.load_data()
         # Define model layers.
-        self.build_model()
+        self.build_model(verbose=True)
 
         # The StopAtStepHook handles stopping after running given steps.
         self.hooks = [tf.train.StopAtStepHook(last_step=1000000)]
@@ -74,9 +85,28 @@ class Worker:
         self.cross_validate()
         self.test()
 
-    def train(self, job_name="default"):
-        self.log("Starting training.")
+    def train(self, job_name="default", lo = 0, hi=None):
+
+        with self.status_lock:
+            self.log(f"Status: {self.status}")
+            if self.status == "BUSY":
+                return
+            self.status = "BUSY"
+
         self.set_job(job_name)
+        self.log(f"Starting training job {self.job_name} on samples [{lo}, {hi}].")
+        self.log(f"Train folder: {self.train_folder}")
+        self.log(f"Job name: {self.job_name}")
+
+        if not hi: # default to 4800
+            hi = self.steps - self.remaining
+        else:
+            hi = min(self.steps-self.remaining, hi + 1)
+
+        if not lo:
+            lo = 0
+
+        self.build_model()
 
         #while num_epoch < epochs:
         with tf.train.MonitoredTrainingSession(
@@ -86,8 +116,9 @@ class Worker:
                 hooks=self.hooks,
                 config=self.session_conf) as mon_sess:
 
-            for j in range(0, self.steps - self.remaining, self.step_size):
+            for j in range(lo, hi, self.step_size):
                 #Feeding step_size-amount data with 0.5 keeping probabilities on DROPOUT LAYERS
+                # print(j)
                 _, c = mon_sess.run(
                     [self.train_op, self.cross_entropy],
                     feed_dict={
@@ -97,20 +128,34 @@ class Worker:
                         self.hold_prob2: 0.5
                     })
 
-                if (self.global_step.eval(session=mon_sess) % 20 == 0):
-                    with open('./log_folder/' + self.job_name + '_log', 'a') as f:
-                        f.write('\nstep: ' + str(j) + "\tglobal_step: " +
-                                str(self.global_step.eval(session=mon_sess)))
+                # if (self.global_step.eval(session=mon_sess) % 20 == 0):
+                #     with open('./log_folder/' + self.job_name + '_log', 'a') as f:
+                #         f.write('\nstep: ' + str(j) + "\tglobal_step: " +
+                #                 str(self.global_step.eval(session=mon_sess)))
+            with open('./log_folder/' + self.job_name + '_log', 'a') as f:
+                f.write('\nstep: ' + str(hi) + "\tglobal_step: " +
+                        str(self.global_step.eval(session=mon_sess)))
 
             self.saver.save(get_session(mon_sess),
                        self.train_folder + "/latest_model_" + self.job_name + ".ckpt")
 
-        self.log("Training finished.")
+        self.log(f"Finished training job {self.job_name} on samples [{lo}, {hi}].")
+        with self.status_lock:
+            self.status = "FREE"
 
     def cross_validate(self, job_name="default"):
 
-        self.log("Starting cross validation.")
+        with self.status_lock:
+            self.log(f"Status: {self.status}")
+            if self.status == "BUSY":
+                return
+            self.status = "BUSY"
+
+        
         self.set_job(job_name)
+        self.log(f"Starting cross validation for job {self.job_name}.")
+
+        self.build_model()
 
         with tf.Session(target=self.server.target) as sess:
             with open('./log_folder/' + self.job_name + '_log', 'a') as f:
@@ -150,8 +195,15 @@ class Worker:
                         str(loss_cv_) + "\tAUC:" + str(auc_cv_))
 
         self.log("Cross validation finished.")
+        with self.status_lock:
+            self.status = "FREE"
 
     def test(self, job_name="default"):
+        with self.status_lock:
+            self.log(f"Status: {self.status}")
+            if self.status == "BUSY":
+                return
+            self.status = "BUSY"
 
         self.log("Starting testing.")
         self.set_job(job_name)
@@ -199,6 +251,8 @@ class Worker:
                 f.write(str(test_acc_))
 
         self.log("Testing finished.")
+        with self.status_lock:
+            self.status = "FREE"
 
     def load_data(self):
 
@@ -245,7 +299,7 @@ class Worker:
 
         self.log("Data loaded.")
 
-    def build_model(self):
+    def build_model(self, verbose=False):
 
         self.log("Building model.")
 
@@ -279,14 +333,15 @@ class Worker:
             c_1 = c_1 + b_1
             #Applying RELU
             c_1 = tf.nn.relu(c_1)
-
-            self.log(c_1)
+            # if log:
+            #     self.log(c_1)
             ##POOLING LAYER1
             p_1 = tf.nn.max_pool(c_1,
                                  ksize=[1, 3, 3, 1],
                                  strides=[1, 2, 2, 1],
                                  padding='VALID')
-            self.log(p_1)
+            # if log:
+            #     self.log(p_1)
 
             ##CONVOLUTION LAYER 2
             #Weights for layer 2
@@ -301,14 +356,16 @@ class Worker:
             #Applying RELU
             c_2 = tf.nn.relu(c_2)
 
-            self.log(c_2)
+            # if log:
+            #     self.log(c_2)
 
             ##POOLING LAYER2
             p_2 = tf.nn.max_pool(c_2,
                                  ksize=[1, 3, 3, 1],
                                  strides=[1, 2, 2, 1],
                                  padding='VALID')
-            self.log(p_2)
+            # if log:
+            #     self.log(p_2)
 
             ##CONVOLUTION LAYER 3
             #Weights for layer 3
@@ -323,7 +380,8 @@ class Worker:
             #Applying RELU
             c_3 = tf.nn.relu(c_3)
 
-            self.log(c_3)
+            # if log:
+            #     self.log(c_3)
 
             ##CONVOLUTION LAYER 4
             #Weights for layer 4
@@ -338,7 +396,8 @@ class Worker:
             #Applying RELU
             c_4 = tf.nn.relu(c_4)
 
-            self.log(c_4)
+            # if log:
+            #     self.log(c_4)
 
             ##CONVOLUTION LAYER 5
             #Weights for layer 5
@@ -353,18 +412,23 @@ class Worker:
             #Applying RELU
             c_5 = tf.nn.relu(c_5)
 
-            self.log(c_5)
+            # if log:
+            #     self.log(c_5)
 
             ##POOLING LAYER3
             p_3 = tf.nn.max_pool(c_5,
                                  ksize=[1, 3, 3, 1],
                                  strides=[1, 2, 2, 1],
                                  padding='VALID')
-            self.log(p_3)
+
+            # if log:
+            #     self.log(p_3)
 
             #Flattening
             flattened = tf.reshape(p_3, [-1, 6 * 6 * 256])
-            self.log(flattened)
+
+            # if log:
+            #     self.log(flattened)
 
             ##Fully Connected Layer 1
             #Getting input nodes in FC layer 1
@@ -383,7 +447,8 @@ class Worker:
             self.hold_prob1 = tf.placeholder(tf.float32)
             s_fc1 = tf.nn.dropout(s_fc1, keep_prob=self.hold_prob1)
 
-            self.log(s_fc1)
+            # if log: 
+            #     self.log(s_fc1)
 
             ##Fully Connected Layer 2
             #Weights for FC Layer 2
@@ -395,7 +460,9 @@ class Worker:
             s_fc2 = tf.matmul(s_fc1, w2_fc) + b2_fc
             #Applying RELU
             s_fc2 = tf.nn.relu(s_fc2)
-            self.log(s_fc2)
+
+            # if log:
+            #     self.log(s_fc2)
 
             #Dropout Layer 2
             self.hold_prob2 = tf.placeholder(tf.float32)
@@ -410,7 +477,20 @@ class Worker:
             #Summing Matrix calculations and bias
             self.y_pred = tf.matmul(s_fc2, w3_fc) + b3_fc
             #Applying RELU
-            self.log(self.y_pred)
+
+            if verbose:
+                self.log(c_1)
+                self.log(p_1)
+                self.log(c_2)
+                self.log(p_2)
+                self.log(c_3)
+                self.log(c_4)
+                self.log(c_5)
+                self.log(p_3)
+                self.log(flattened)
+                self.log(s_fc1)
+                self.log(s_fc2)
+                self.log(self.y_pred)
 
             self.cross_entropy = tf.reduce_mean(
                 tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y_true,
@@ -427,8 +507,9 @@ class Worker:
             self.log("Model built.")
 
     def log(self, s):
-        print(f"===== WORKER_{self.idx}:", end=" ")
-        print(s)
+        with self.print_lock:
+            print(f"===== WORKER_{self.idx}:", end=" ")
+            print(s)
 
     def set_job(self, job_name):
         ### Move this to be a function called in train, cross_validate, and test
@@ -439,25 +520,96 @@ class Worker:
             os.makedirs(train_dir)
         self.train_folder = train_dir
 
+    def receive(self, message):
 
+        tokens = message.split()
+        command = tokens[0]
+
+        if command == "TRAIN":
+            job_name = tokens[1]
+            lo = int(tokens[2])
+            hi = int(tokens[3])
+            self.train(job_name, lo, hi)
+            status = None
+            with self.status_lock:
+                status = self.status
+            return f"{status}"
+        elif command == "VALIDATE":
+            job_name = tokens[1]
+            self.cross_validate(job_name)
+            status = None
+            with self.status_lock:
+                status = self.status
+            return f"{status}"
+        elif command == "TEST":
+            job_name = tokens[1]
+            self.cross_validate(job_name)
+            status = None
+            with self.status_lock:
+                status = self.status
+            return f"{status}"
+        else: # POLL
+            status = None
+            with self.status_lock:
+                status = self.status
+            return f"{status}"
+
+    def handleClient(self, connection):
+        while True:
+            # try:
+            data = connection.recv(1024)
+            if data:
+                # Set the response to echo back the recieved data 
+                req = data.decode()
+                # self.log(req)
+                response = self.receive(req)
+                connection.send(response.encode())
+                return True
+            else:
+                raise Exception('Client disconnected')
+            # except Exception as e:
+            #     self.log(f"Unexpected error: {e}")
+            #     connection.close()
+            #     return False
+
+    def listen(self, verbose=False):
+        self.log(f"Listening on port {self.port}")
+        while True:
+            connection, address = self.sock.accept()
+            if verbose:
+                self.log(f'Worker connected by {address} at {time.ctime()}')
+            Thread(target = self.handleClient, args = (connection,)).start()
 
 def main():
 
-    if len(sys.argv) < 4:
-        print("Please specify num_ps, num_workers, and worker_idx.")
-        return
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--num_ps', type=int, required=True, help='number of parameter servers')
+    parser.add_argument('--num_workers', type=int, required=True, help='number of workers')
+    parser.add_argument('--worker_index', type=int, required=True, help='worker index')
+    parser.add_argument('--listen', help='whether or not to run the socket server', action='store_true')
+    parser.add_argument('--train', help='whether to train or not', action='store_true')
+    parser.add_argument('--cross_validate', help='whether to validate or not', action='store_true')
+    parser.add_argument('--test', help='whether to validate or not', action='store_true')
+    parser.add_argument("--train_start", default=0, type=int, help="start index of training")
+    parser.add_argument("--train_end", default=None, type=int, help="end index of training")
 
-    num_ps = int(sys.argv[1])
-    num_workers = int(sys.argv[2])
-    worker_idx = int(sys.argv[3])
+    args = parser.parse_args()
+    print(args)
 
-    print(f"{num_ps} ps and {num_workers} workers.")
-
-    cluster = get_cluster(num_ps, num_workers)
+    print(f"{args.num_ps} ps and {args.num_workers} workers.")
+    cluster = get_cluster(args.num_ps, args.num_workers)
     print(cluster)
 
-    worker = Worker(None, None, cluster, worker_idx)
-    worker.run()
+    worker = Worker('', get_worker_port(args.worker_index), cluster, args.worker_index)
+
+    if args.listen:
+        worker.listen()
+    if args.train:
+        worker.train("default", args.train_start, args.train_end)
+    if args.cross_validate:
+        worker.cross_validate()
+    if args.test:
+        worker.test()
 
 if __name__ == "__main__":
     main()
