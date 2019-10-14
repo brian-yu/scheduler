@@ -152,7 +152,9 @@ class Worker:
 
             ckpt = tf.train.latest_checkpoint(self.train_folder)
             self.log(f"CHECKPOINT: {ckpt}")
-            saver = tf.train.import_meta_graph(self.train_folder + "/latest_model_" + self.job_name + ".ckpt.meta", clear_devices=True)
+            saver = tf.train.import_meta_graph(
+                self.train_folder + "/latest_model_" + self.job_name + ".ckpt.meta",
+                clear_devices=True)
             saver.restore(sess, ckpt)
 
             cv_auc_list = []
@@ -211,7 +213,9 @@ class Worker:
             #               self.train_folder + "/latest_model_" + self.job_name + ".ckpt")
             ckpt = tf.train.latest_checkpoint(self.train_folder)
             self.log(f"CHECKPOINT: {ckpt}")
-            saver = tf.train.import_meta_graph(self.train_folder + "/latest_model_" + self.job_name + ".ckpt.meta", clear_devices=True)
+            saver = tf.train.import_meta_graph(
+                self.train_folder + "/latest_model_" + self.job_name + ".ckpt.meta",
+                clear_devices=True)
             saver.restore(sess, ckpt)
 
             test_auc_list = []
