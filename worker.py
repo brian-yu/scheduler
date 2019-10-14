@@ -74,17 +74,6 @@ class Worker:
             intra_op_parallelism_threads=1,
             inter_op_parallelism_threads=1)
 
-    def run(self):
-        # while True:
-        #     task = self.queue.get()
-        #     if task == "END":
-        #         break
-        #     self.master_queue.put(f"Worker {self.idx} has completed {task}.")
-
-        self.train()
-        self.cross_validate()
-        self.test()
-
     def train(self, job_name="default", lo = 0, hi=None):
 
         with self.status_lock:
