@@ -1,5 +1,10 @@
 # Multithreaded TensorFlow scheduler
 
+Important files
+- `worker.py`: Runs a socket server that listens for commands and runs training tasks in a thread.
+- `master.py`: Initializes jobs and tasks and decides how to schedule tasks on workers.
+- `ps.py`: Parameter server.
+
 ## How to run
 1. Start the parameter server. `python ps.py 1 2 0` starts 1 parameter server configured to handle 2 workers with the current parameter server being the 0th index.
 
