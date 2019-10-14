@@ -160,8 +160,12 @@ class Worker:
         with tf.Session(target=self.server.target) as sess:
             with open('./log_folder/' + self.job_name + '_log', 'a') as f:
                 f.write('\n\nevaluating the accuracy on the validation set')
-            self.saver.restore(sess,
-                          self.train_folder + "/latest_model_" + self.job_name + ".ckpt")
+
+            ckpt = tf.train.latest_checkpoint(self.train_folder)
+            self.log(f"CHECKPOINT: {ckpt}")
+            saver = tf.train.import_meta_graph(self.train_folder + "/latest_model_" + self.job_name + ".ckpt.meta", clear_devices=True)
+            saver.restore(sess, ckpt)
+
             cv_auc_list = []
             cv_acc_list = []
             cv_loss_list = []
@@ -205,15 +209,22 @@ class Worker:
                 return
             self.status = "BUSY"
 
-        self.log("Starting testing.")
         self.set_job(job_name)
+        self.log(f"Starting testing for job {self.job_name}.")
+
+        self.build_model()
 
         with tf.Session(target=self.server.target) as sess:
             with open('./log_folder/' + self.job_name + '_log', 'a') as f:
                 f.write('\n\ntest the model accuracy after training')
 
-            self.saver.restore(sess,
-                          self.train_folder + "/latest_model_" + self.job_name + ".ckpt")
+            # self.saver.restore(sess,
+            #               self.train_folder + "/latest_model_" + self.job_name + ".ckpt")
+            ckpt = tf.train.latest_checkpoint(self.train_folder)
+            self.log(f"CHECKPOINT: {ckpt}")
+            saver = tf.train.import_meta_graph(self.train_folder + "/latest_model_" + self.job_name + ".ckpt.meta", clear_devices=True)
+            saver.restore(sess, ckpt)
+
             test_auc_list = []
             test_acc_list = []
             test_loss_list = []
@@ -250,7 +261,7 @@ class Worker:
             with open('./accuracy_folder/accuracy_' + self.job_name, 'w') as f:
                 f.write(str(test_acc_))
 
-        self.log("Testing finished.")
+        self.log(f"Finished testing for job {self.job_name}.")
         with self.status_lock:
             self.status = "FREE"
 
@@ -543,7 +554,7 @@ class Worker:
             return f"{status}"
         elif command == "TEST":
             job_name = tokens[1]
-            self.cross_validate(job_name)
+            self.test(job_name)
             status = None
             with self.status_lock:
                 status = self.status
