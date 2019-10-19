@@ -37,6 +37,8 @@ class Worker:
         self.job_name = job_name
 
         self.status = "FREE"
+        self.train_interrupt = False
+        self.last_trained = None
 
         self.sock = socket(AF_INET, SOCK_STREAM)
         self.sock.bind((self.host, self.port))
@@ -44,6 +46,8 @@ class Worker:
 
         self.print_lock = Lock()
         self.status_lock = Lock()
+        self.train_interrupt_lock = Lock()
+        self.last_trained_lock = Lock()
 
         self.step_size = 8
         self.log(cluster)
@@ -97,6 +101,9 @@ class Worker:
 
         self.build_model()
 
+
+        assert self.job_name in self.train_folder, "Incorrect train folder"
+
         #while num_epoch < epochs:
         with tf.train.MonitoredTrainingSession(
                 master=self.server.target,
@@ -117,6 +124,10 @@ class Worker:
                         self.hold_prob2: 0.5
                     })
 
+                with self.train_interrupt_lock:
+                    if self.train_interrupt:
+                        break
+
                 # if (self.global_step.eval(session=mon_sess) % 20 == 0):
                 #     with open('./log_folder/' + self.job_name + '_log', 'a') as f:
                 #         f.write('\nstep: ' + str(j) + "\tglobal_step: " +
@@ -127,6 +138,11 @@ class Worker:
 
             self.saver.save(get_session(mon_sess),
                        self.train_folder + "/latest_model_" + self.job_name + ".ckpt")
+
+        with self.train_interrupt_lock:
+            self.train_interrupt = False
+        with self.last_trained_lock:
+            self.last_trained = j
 
         self.log(f"Finished training job {self.job_name} on samples [{lo}, {hi}].")
         with self.status_lock:
@@ -519,7 +535,8 @@ class Worker:
         ### Move this to be a function called in train, cross_validate, and test
         # We want one worker to be able to execute a task from any job.
         self.job_name = job_name
-        train_dir = os.path.join(os.getcwd(), "checkpoints", self.job_name)
+        # train_dir = os.path.join(os.getcwd(), "checkpoints", self.job_name)
+        train_dir = os.path.join(os.getcwd(), f"{self.job_name}_checkpoints")
         if not os.path.exists(train_dir):
             os.makedirs(train_dir)
         self.train_folder = train_dir
@@ -538,6 +555,23 @@ class Worker:
             with self.status_lock:
                 status = self.status
             return f"{status}"
+        elif command == "STOP_TRAIN":
+            job_name = tokens[1]
+            with self.train_interrupt_lock:
+                self.train_interrupt = True
+
+            last_trained = None
+            while True:
+                with self.train_interrupt_lock:
+                    if not self.train_interrupt:
+                        with self.last_trained_lock:
+                            last_trained = self.last_trained
+                            self.last_trained = None
+                time.sleep(0.1)
+
+            if not last_trained:
+                return "-1"
+            return f"{last_trained}"
         elif command == "VALIDATE":
             job_name = tokens[1]
             self.cross_validate(job_name)
