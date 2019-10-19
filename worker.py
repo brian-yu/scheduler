@@ -38,7 +38,8 @@ class Worker:
 
         self.status = "FREE"
         self.train_interrupt = False
-        self.last_trained = None
+        self.last_trained_job = None
+        self.last_trained_sample = None
 
         self.sock = socket(AF_INET, SOCK_STREAM)
         self.sock.bind((self.host, self.port))
@@ -87,7 +88,7 @@ class Worker:
             self.status = "BUSY"
 
         self.set_job(job_name)
-        self.log(f"Starting training job {self.job_name} on samples [{lo}, {hi}].")
+        self.log(f"Starting training job {self.job_name} beginning at sample {lo}.")
         self.log(f"Train folder: {self.train_folder}")
         self.log(f"Job name: {self.job_name}")
 
@@ -127,13 +128,15 @@ class Worker:
                 with self.train_interrupt_lock:
                     if self.train_interrupt:
                         break
+                if j % 200 == 0:
+                    self.log(f"Trained sample {j}.")
 
                 # if (self.global_step.eval(session=mon_sess) % 20 == 0):
                 #     with open('./log_folder/' + self.job_name + '_log', 'a') as f:
                 #         f.write('\nstep: ' + str(j) + "\tglobal_step: " +
                 #                 str(self.global_step.eval(session=mon_sess)))
             with open('./log_folder/' + self.job_name + '_log', 'a') as f:
-                f.write('\nstep: ' + str(hi) + "\tglobal_step: " +
+                f.write('\nstep: ' + str(j) + "\tglobal_step: " +
                         str(self.global_step.eval(session=mon_sess)))
 
             self.saver.save(get_session(mon_sess),
@@ -142,9 +145,10 @@ class Worker:
         with self.train_interrupt_lock:
             self.train_interrupt = False
         with self.last_trained_lock:
-            self.last_trained = j
+            self.last_trained_sample = j
+            self.last_trained_job = self.job_name
 
-        self.log(f"Finished training job {self.job_name} on samples [{lo}, {hi}].")
+        self.log(f"Finished training job {self.job_name} on samples [{lo}, {self.last_trained_sample}].")
         with self.status_lock:
             self.status = "FREE"
 
@@ -548,30 +552,21 @@ class Worker:
 
         if command == "TRAIN":
             job_name = tokens[1]
-            lo = int(tokens[2])
-            hi = int(tokens[3])
-            self.train(job_name, lo, hi)
+            i = int(tokens[2])
+            self.train(job_name, i)
             status = None
             with self.status_lock:
                 status = self.status
             return f"{status}"
-        elif command == "STOP_TRAIN":
-            job_name = tokens[1]
-            with self.train_interrupt_lock:
-                self.train_interrupt = True
-
-            last_trained = None
-            while True:
+        elif command == "TRAIN_INTERRUPT":
+            with self.status_lock:
+                if self.status != "BUSY":
+                    return "FALSE"
                 with self.train_interrupt_lock:
-                    if not self.train_interrupt:
-                        with self.last_trained_lock:
-                            last_trained = self.last_trained
-                            self.last_trained = None
-                time.sleep(0.1)
-
-            if not last_trained:
-                return "-1"
-            return f"{last_trained}"
+                    self.train_interrupt = True
+                self.log(f"Suspending training of {self.job_name}.")
+                self.status = "STOPPING"
+            return "TRUE"
         elif command == "VALIDATE":
             job_name = tokens[1]
             self.cross_validate(job_name)
@@ -588,9 +583,14 @@ class Worker:
             return f"{status}"
         else: # POLL
             status = None
+            last_trained_job = None
+            last_trained_sample = None
             with self.status_lock:
                 status = self.status
-            return f"{status}"
+            with self.last_trained_lock:
+                last_trained_job = self.last_trained_job
+                last_trained_sample = self.last_trained_sample
+            return f"{status} {last_trained_job} {last_trained_sample}"
 
     def handleClient(self, connection):
         while True:
