@@ -62,7 +62,7 @@ class Job:
 
     def set_curr_sample(self, i):
         self.curr_sample = i
-        if self.curr_sample == self.num_samples - 1:
+        if self.curr_sample >= self.num_samples - 1:
             self.completed = True
 
 class Master:

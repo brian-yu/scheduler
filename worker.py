@@ -80,10 +80,10 @@ class Worker:
             inter_op_parallelism_threads=1)
 
     def train(self, job_name="default", lo = 0, hi=None):
-
+        hi = self.steps - self.remaining
         with self.status_lock:
             self.log(f"Status: {self.status}")
-            if self.status == "BUSY":
+            if self.status == "BUSY" or lo >= hi:
                 return
             self.status = "BUSY"
 
@@ -92,10 +92,10 @@ class Worker:
         self.log(f"Train folder: {self.train_folder}")
         self.log(f"Job name: {self.job_name}")
 
-        if not hi: # default to 4800
-            hi = self.steps - self.remaining
-        else:
-            hi = min(self.steps-self.remaining, hi + 1)
+        # if not hi: # default to 4800
+        #     hi = self.steps - self.remaining
+        # else:
+        #     hi = min(self.steps-self.remaining, hi + 1)
 
         if not lo:
             lo = 0
@@ -112,7 +112,6 @@ class Worker:
                 checkpoint_dir=self.train_folder,
                 hooks=self.hooks,
                 config=self.session_conf) as mon_sess:
-
             for j in range(lo, hi, self.step_size):
                 #Feeding step_size-amount data with 0.5 keeping probabilities on DROPOUT LAYERS
                 # print(j)
