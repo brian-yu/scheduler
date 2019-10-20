@@ -101,7 +101,6 @@ class Worker:
 
         assert self.job_name in self.train_folder, "Incorrect train folder"
 
-        #while num_epoch < epochs:
         with tf.train.MonitoredTrainingSession(
                 master=self.server.target,
                 is_chief=(self.idx == 0),

@@ -55,6 +55,8 @@ class WorkerTracker:
 class Job:
     def __init__(self, job_name="default", epochs=1, num_samples=4800, batch_size=120):
         self.job_name = job_name
+        self.epochs = epochs
+        self.curr_epoch = 0
         self.num_samples = num_samples
         self.curr_sample = 0
         self.start_time = None
@@ -63,7 +65,11 @@ class Job:
     def set_curr_sample(self, i):
         self.curr_sample = i
         if self.curr_sample >= self.num_samples - 1:
-            self.completed = True
+            self.curr_epoch += 1
+            if self.curr_epoch >= self.epochs:
+                self.completed = True
+            else:
+                self.curr_sample = 0
 
 class Master:
 
@@ -77,13 +83,6 @@ class Master:
         self.completed_jobs = set()
 
         self.train_interval = 60 # how long to train each job for in seconds before suspending
-
-        # job_tasks = [job.tasks for job in self.jobs]
-
-        # ASSUMES THAT EACH JOB HAS THE SAME NUMBER OF TASKS
-        # self.task_queue = deque([task for tup in zip(*job_tasks) for task in tup])
-        # self.num_tasks = len(self.task_queue)
-        # self.completed_tasks = []
 
     def train(self):
 
@@ -115,11 +114,8 @@ class Master:
                     if self.pending_jobs:
                         job = self.pending_jobs.popleft()
                         self.pending_jobs.append(job)
-                        # task = self.task_queue.popleft()
-                        # worker.task = task
-                        # worker.train(task)
                         worker.train(job)
-                        print(f"Running ({job.job_name}, {job.curr_sample}) on worker {worker_id}.")
+                        print(f"Running ({job.job_name}, epoch={job.curr_epoch}, sample={job.curr_sample}) on worker {worker_id}.")
 
             time.sleep(1)
         print("Finished training.")
@@ -135,7 +131,10 @@ if __name__ == "__main__":
 
     worker_addrs = get_worker_addresses(args.num_workers)
 
-    jobs = [Job(job_name=f"job_{i}") for i in range(3)]
+    NUM_JOBS = 3
+    NUM_EPOCHS = 2
+
+    jobs = [Job(job_name=f"job_{i}", epochs=NUM_EPOCHS) for i in range(NUM_JOBS)]
 
     master = Master(worker_addrs, jobs=jobs)
 
