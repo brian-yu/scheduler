@@ -72,7 +72,7 @@ class Worker:
         self.acc_list = []
         self.auc_list = []
         self.loss_list = []
-        self.saver = tf.train.Saver()
+        # self.saver = tf.train.Saver()
 
         # Limit to 1 thread
         self.session_conf = tf.ConfigProto(
@@ -92,16 +92,12 @@ class Worker:
         self.log(f"Train folder: {self.train_folder}")
         self.log(f"Job name: {self.job_name}")
 
-        # if not hi: # default to 4800
-        #     hi = self.steps - self.remaining
-        # else:
-        #     hi = min(self.steps-self.remaining, hi + 1)
-
         if not lo:
             lo = 0
 
         self.build_model()
 
+        saver = tf.train.Saver()
 
         assert self.job_name in self.train_folder, "Incorrect train folder"
 
@@ -138,7 +134,7 @@ class Worker:
                 f.write('\nstep: ' + str(j) + "\tglobal_step: " +
                         str(self.global_step.eval(session=mon_sess)))
 
-            self.saver.save(get_session(mon_sess),
+            saver.save(get_session(mon_sess),
                        self.train_folder + "/latest_model_" + self.job_name + ".ckpt")
 
         with self.train_interrupt_lock:
