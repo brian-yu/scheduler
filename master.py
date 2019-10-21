@@ -79,6 +79,8 @@ class Master:
         self.jobs_by_name = {job.job_name: job for job in self.jobs}
         self.num_jobs = len(self.jobs)
 
+        self.currently_training_jobs = set()
+
         self.pending_jobs = deque(self.jobs)
         self.completed_jobs = set()
 
@@ -99,14 +101,14 @@ class Master:
                     if time.time() - worker.job.start_time >= self.train_interval:
                         print(f"Suspending {worker.job.job_name} on worker {worker_id}.")
                         worker.train_interrupt()
-                    continue
                 elif status == "STOPPING":
-                    continue
+                    pass
                 elif status == "FREE":
                     if last_job_name != 'None':
                         last_job = self.jobs_by_name[last_job_name]
                         last_job.set_curr_sample(last_sample + 1)
                         print(f"Updating status of {last_job.job_name} to sample {last_sample+1}.")
+                        self.currently_training_jobs.remove(last_job)
                         if last_job.completed:
                             self.pending_jobs.remove(last_job)
                             self.completed_jobs.add(last_job)
@@ -114,8 +116,11 @@ class Master:
                     if self.pending_jobs:
                         job = self.pending_jobs.popleft()
                         self.pending_jobs.append(job)
-                        worker.train(job)
-                        print(f"Running ({job.job_name}, epoch={job.curr_epoch}, sample={job.curr_sample}) on worker {worker_id}.")
+
+                        if job not in self.currently_training_jobs:
+                            self.currently_training_jobs.add(job)
+                            worker.train(job)
+                            print(f"Running ({job.job_name}, epoch={job.curr_epoch}, sample={job.curr_sample}) on worker {worker_id}.")
 
             time.sleep(1)
         print("Finished training.")
