@@ -139,7 +139,7 @@ if __name__ == "__main__":
     NUM_JOBS = 3
     NUM_EPOCHS = 2
 
-    jobs = [Job(job_name=f"job_{i}", epochs=NUM_EPOCHS) for i in range(NUM_JOBS)]
+    jobs = [Job(job_name=f"job_{i}", epochs=i+1) for i in range(NUM_JOBS)]
 
     master = Master(worker_addrs, jobs=jobs)
 
