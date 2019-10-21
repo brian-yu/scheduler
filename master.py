@@ -93,7 +93,7 @@ class Master:
         for worker in self.workers:
             worker.reset()
 
-        sleep(1)
+        time.sleep(1)
 
         while self.pending_jobs:
 
