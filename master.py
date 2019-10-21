@@ -34,10 +34,6 @@ class WorkerTracker:
         # print(f"{message}")
         sock.close()
 
-    def reset(self):
-        self.__init__(self.address_str)
-        return self.send("RESET")
-
     def train(self, job):
         self.job = job
         self.job.start_time = time.time()
@@ -51,6 +47,11 @@ class WorkerTracker:
         if sample_idx != 'None':
             sample_idx = int(sample_idx)
         return status, job, sample_idx
+
+    def reset(self):
+        self.task = None
+        self.job = None
+        return self.sendRecv(f"RESET")
 
 class Job:
     def __init__(self, job_name="default", epochs=1, num_samples=4800, batch_size=120):
@@ -87,6 +88,12 @@ class Master:
         self.train_interval = 60 # how long to train each job for in seconds before suspending
 
     def train(self):
+
+        # Reset all workers
+        for worker in self.workers:
+            worker.reset()
+
+        sleep(1)
 
         while self.pending_jobs:
 

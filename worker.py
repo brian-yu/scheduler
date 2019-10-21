@@ -29,6 +29,7 @@ output_classes = 4
 TRAIN_DIR = os.getcwd()
 
 class Worker:
+    # Initialize the Worker. Keep this in sync with reset().
     def __init__(self, host, port, cluster, worker_idx, job_name="default"):
         self.host = host
         self.port = port
@@ -539,6 +540,15 @@ class Worker:
             os.makedirs(train_dir)
         self.train_folder = train_dir
 
+    def reset(self):
+        self.status = "FREE"
+        self.train_interrupt = False
+        self.last_trained_job = None
+        self.last_trained_sample = None
+        self.acc_list = []
+        self.auc_list = []
+        self.loss_list = []
+
     def receive(self, message):
 
         tokens = message.split()
@@ -575,6 +585,9 @@ class Worker:
             with self.status_lock:
                 status = self.status
             return f"{status}"
+        elif command == "RESET":
+            self.reset()
+            return "TRUE"
         else: # POLL
             status = None
             last_trained_job = None
