@@ -111,14 +111,25 @@ class Master:
                 elif status == "STOPPING":
                     pass
                 elif status == "FREE":
-                    if last_job_name != 'None':
-                        last_job = self.jobs_by_name[last_job_name]
-                        last_job.set_curr_sample(last_sample + 1)
-                        print(f"Updating status of {last_job.job_name} to sample {last_sample+1}.")
-                        self.currently_training_jobs.remove(last_job)
-                        if last_job.completed:
-                            self.pending_jobs.remove(last_job)
-                            self.completed_jobs.add(last_job)
+
+                    # If there is a previous job that we must update.
+                    # if last_job_name != 'None':
+                    if worker.job != None:
+                        # last_job = self.jobs_by_name[last_job_name]
+                        # last_job.set_curr_sample(last_sample + 1)
+                        # print(f"Updating status of {last_job.job_name} to sample {last_sample+1}.")
+                        # self.currently_training_jobs.remove(last_job)
+                        # if last_job.completed:
+                        #     self.pending_jobs.remove(last_job)
+                        #     self.completed_jobs.add(last_job)
+
+                        worker.job.set_curr_sample(last_sample + 1)
+                        print(f"Updating status of {worker.job.job_name} to sample {last_sample+1}.")
+                        self.currently_training_jobs.remove(worker.job)
+                        if worker.job.completed:
+                            self.pending_jobs.remove(worker.job)
+                            self.completed_jobs.add(worker.job)
+                        worker.job = None
 
                     if self.pending_jobs:
                         job = self.pending_jobs.popleft()

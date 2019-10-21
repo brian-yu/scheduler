@@ -80,6 +80,8 @@ class Worker:
             intra_op_parallelism_threads=1,
             inter_op_parallelism_threads=1)
 
+        self.log(f"Last sample: {self.steps-self.remaining - 1}, Step size: {self.step_size}")
+
     def train(self, job_name="default", lo = 0, hi=None):
         hi = self.steps - self.remaining
         with self.status_lock:
