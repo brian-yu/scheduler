@@ -117,6 +117,7 @@ class Worker:
                 checkpoint_dir=self.train_folder,
                 hooks=self.hooks,
                 config=self.session_conf) as mon_sess:
+            self.log("Starting training loop.")
             for j in range(lo, hi, self.step_size):
                 #Feeding step_size-amount data with 0.5 keeping probabilities on DROPOUT LAYERS
                 # print(j)
@@ -131,6 +132,7 @@ class Worker:
 
                 with self.train_interrupt_lock:
                     if self.train_interrupt:
+                        self.log("Breaking training loop.")
                         break
                 if j % 200 == 0:
                     self.log(f"Trained sample {j}.")
