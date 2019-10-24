@@ -154,10 +154,10 @@ if __name__ == "__main__":
 
     worker_addrs = get_worker_addresses(args.num_workers)
 
-    NUM_JOBS = 3
+    NUM_JOBS = 5
     NUM_EPOCHS = 2
 
-    jobs = [Job(job_name=f"job_{i}", epochs=i+1) for i in range(NUM_JOBS)]
+    jobs = [Job(job_name=f"job_{i}", epochs=NUM_EPOCHS) for i in range(NUM_JOBS)]
 
     master = Master(worker_addrs, jobs=jobs)
 

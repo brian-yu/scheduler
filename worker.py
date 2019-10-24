@@ -58,6 +58,8 @@ class Worker:
                          job_name="worker",
                          task_index=self.idx)
 
+        self.cumulative_time_saved = 0
+
         # Load training and test data.
         self.load_data()
         # Define model layers.
@@ -98,7 +100,12 @@ class Worker:
         if not lo:
             lo = 0
 
+        build_start = time.time()
         self.build_model()
+        build_end = time.time()
+        self.cumulative_time_saved += build_end - build_start
+
+        self.log_time(self.job_name, 'start', time.time() - self.cumulative_time_saved)
 
         saver = tf.train.Saver()
 
@@ -135,9 +142,12 @@ class Worker:
             with open('./log_folder/' + self.job_name + '_log', 'a') as f:
                 f.write('\nstep: ' + str(j) + "\tglobal_step: " +
                         str(self.global_step.eval(session=mon_sess)))
-
+            save_start = time.time()
             saver.save(get_session(mon_sess),
                        self.train_folder + "/latest_model_" + self.job_name + ".ckpt")
+            save_end = time.time()
+            self.cumulative_time_saved += save_end - save_start
+            self.log_time(self.job_name, 'end', time.time() - self.cumulative_time_saved)
 
         with self.train_interrupt_lock:
             self.train_interrupt = False
@@ -531,6 +541,12 @@ class Worker:
         with self.print_lock:
             print(f"===== WORKER_{self.idx}:", end=" ")
             print(s)
+
+    def log_time(self, job_name, action, time):
+        if action != 'start' and action != 'end':
+            raise Exception(f"Invalid action: {action}")
+        with open(f'./log_folder/worker_{self.idx}_log', 'a') as f:
+            f.write(f'\n{job_name},{action},{time}')
 
     def set_job(self, job_name):
         ### Move this to be a function called in train, cross_validate, and test
