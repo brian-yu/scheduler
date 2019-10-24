@@ -78,9 +78,10 @@ class Worker:
         # self.saver = tf.train.Saver()
 
         #GPU settings
-        self.session_conf = tf.ConfigProto(allow_soft_placement=True)
-        self.session_conf.gpu_options.allow_growth = True
-        self.session_conf.gpu_options.allocator_type = 'BFC'
+        self.session_conf = tf.ConfigProto()
+        # self.session_conf = tf.ConfigProto(allow_soft_placement=True)
+        # self.session_conf.gpu_options.allow_growth = True
+        # self.session_conf.gpu_options.allocator_type = 'BFC'
 
         self.log(f"Last sample: {self.steps-self.remaining - 1}, Step size: {self.step_size}")
 
