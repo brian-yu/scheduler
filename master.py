@@ -88,12 +88,13 @@ class Master:
         self.train_interval = 60 # how long to train each job for in seconds before suspending
 
     def train(self):
-
         # Reset all workers
         for worker in self.workers:
             worker.reset()
 
         time.sleep(1)
+
+        start_time = time.time()
 
         while self.pending_jobs:
 
@@ -141,7 +142,9 @@ class Master:
                             print(f"Running ({job.job_name}, epoch={job.curr_epoch}, sample={job.curr_sample}) on worker {worker_id}.")
 
             time.sleep(1)
-        print("Finished training.")
+
+        end_time = time.time()
+        print(f"Finished training in {end_time - start_time} seconds.")
 
 if __name__ == "__main__":
 

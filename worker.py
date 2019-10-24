@@ -546,7 +546,7 @@ class Worker:
         if action != 'start' and action != 'end':
             raise Exception(f"Invalid action: {action}")
         with open(f'./log_folder/worker_{self.idx}_log', 'a') as f:
-            f.write(f'\n{job_name},{action},{time}')
+            f.write(f'{job_name},{action},{time}\n')
 
     def set_job(self, job_name):
         ### Move this to be a function called in train, cross_validate, and test
@@ -566,6 +566,15 @@ class Worker:
         self.acc_list = []
         self.auc_list = []
         self.loss_list = []
+
+        log_folder = './log_folder'
+        for file in os.listdir(log_folder):
+            path = os.path.join(log_folder, file)
+            try:
+                if os.path.isfile(path):
+                    os.unlink(path)
+            except Exception as e:
+                self.log(e)
 
     def receive(self, message):
 
