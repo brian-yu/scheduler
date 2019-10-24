@@ -77,10 +77,10 @@ class Worker:
         self.loss_list = []
         # self.saver = tf.train.Saver()
 
-        # Limit to 1 thread
-        self.session_conf = tf.ConfigProto(
-            intra_op_parallelism_threads=1,
-            inter_op_parallelism_threads=1)
+        #GPU settings
+        self.session_conf = tf.ConfigProto(allow_soft_placement=True)
+        config.gpu_options.allow_growth = True
+        config.gpu_options.allocator_type = 'BFC'
 
         self.log(f"Last sample: {self.steps-self.remaining - 1}, Step size: {self.step_size}")
 
