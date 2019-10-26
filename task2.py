@@ -272,7 +272,7 @@ def main(_):
 
             global_step = tf.train.get_or_create_global_step()
 
-            train_op = tf.train.AdagradOptimizer(0.00001).minimize(
+            train_op = tf.train.AdamOptimizer(0.00001).minimize(
                 cross_entropy, global_step=global_step)
 
             matches = tf.equal(tf.argmax(y_pred, 1), tf.argmax(y_true, 1))
