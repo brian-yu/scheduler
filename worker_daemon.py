@@ -90,9 +90,12 @@ class WorkerDaemon(Daemon):
             
         return "Done"
 
-    def cleanup(self):
+    def cleanup(self, signal, frame):
+        self.log("Killing all PS processes.")
         for proc in self.job_ps_process.values():
             proc.terminate()
+        self.log("Exiting.")
+        sys.exit(0)
 
 if __name__ == "__main__":
 
