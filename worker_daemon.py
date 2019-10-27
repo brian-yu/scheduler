@@ -6,6 +6,7 @@ from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread, Lock
 import subprocess
 from enum import Enum
+import signal
 
 from daemon import Daemon
 
@@ -89,7 +90,9 @@ class WorkerDaemon(Daemon):
             
         return "Done"
 
-
+    def cleanup(self):
+        for proc in self.job_ps_process.values():
+            proc.terminate()
 
 if __name__ == "__main__":
 
@@ -98,5 +101,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     worker_daemon = WorkerDaemon('', args.port)
+
+    signal.signal(signal.SIGINT, worker_daemon.cleanup)
 
     worker_daemon.listen()
