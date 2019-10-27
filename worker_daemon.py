@@ -47,11 +47,8 @@ class WorkerDaemon(Daemon):
                 job, ps_hosts, worker_hosts = tokens[1:4]
                 self.log(f"Starting PS for job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
                 proc = subprocess.Popen(
-                    ['python3', 'task2.py',
-                     f"--ps_hosts={ps_hosts}",
-                     f"--worker_hosts={worker_hosts}",
-                     "--job_name=ps --task_index=0",
-                     f"--job={job}"])
+                    ['python3', 'task2.py', f"--ps_hosts={ps_hosts}", f"--worker_hosts={worker_hosts}",
+                     "--job_name=ps", "--task_index=0", f"--job={job}"])
                 self.job_ps_process[job] = proc
 
             except Exception as err:
