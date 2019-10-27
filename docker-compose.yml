@@ -6,7 +6,7 @@ services:
     volumes:
       - /home/ubuntu/scheduler:/root
     network_mode: "host"
-    command: python3 worker_daemon.py --port=8888
+    command: python3 -u worker_daemon.py --port=8888
 
   ftp:
     image: stilliard/pure-ftpd:hardened
