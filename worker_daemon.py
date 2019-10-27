@@ -72,6 +72,11 @@ class WorkerDaemon(Daemon):
 
 
 if __name__ == "__main__":
-    worker_daemon = WorkerDaemon('', 8888)
+
+    parser = argparse.ArgumentParser(description='Worker node daemon.')
+    parser.add_argument("--port", default=8888, type=int, help="Port to listen for commands on.")
+    args = parser.parse_args()
+
+    worker_daemon = WorkerDaemon('', args.port)
 
     worker_daemon.listen()
