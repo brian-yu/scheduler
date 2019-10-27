@@ -54,7 +54,7 @@ class WorkerClient:
 
     def reset(self):
         self.job = None
-        return self.sendRecv({Command.RESET.value})
+        return self.sendRecv(Command.RESET.value)
 
     # def train(self, job):
     #     self.job = job
@@ -169,11 +169,14 @@ if __name__ == "__main__":
     worker0 = WorkerClient(f'{worker_host}:8888')
 
 
+    print(ps0.reset())
+    print(worker0.reset())
+
+
     print(ps0.status())
     print(worker0.status())
 
     # ps0.start_ps('test', 2222, f'{worker_host}:2222')
-    
     # worker0.train('test', f'{ps_host}:2222', f'{worker_host}:2222')
 
-    worker0.validate('test', f'{ps_host}:2222', f'{worker_host}:2222')
+    # worker0.validate('test', f'{ps_host}:2222', f'{worker_host}:2222')

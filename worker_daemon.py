@@ -120,6 +120,7 @@ class WorkerDaemon(Daemon):
 
     def delete_directory_contents(self, rel_path):
         path = os.path.join(os.getcwd(), rel_path)
+        self.log(f"Deleting {path}.")
         for file in os.listdir(path):
             file_path = os.path.join(folder, file)
             try:
