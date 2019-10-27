@@ -17,7 +17,7 @@ services:
     volumes:
       - "/home/ubuntu/scheduler/checkpoints/:/home/checkpoints/"
     environment:
-      PUBLICHOST: "0.0.0.0"
+      PUBLICHOST: ${PUBLIC_DNS_NAME}
       FTP_USER_NAME: checkpoints
       FTP_USER_PASS: test
       FTP_USER_HOME: /home/checkpoints
