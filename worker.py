@@ -35,8 +35,21 @@ class Worker:
         self.port = port
         self.cluster = cluster
         self.idx = worker_idx
+        self.job_name = job_name
 
-        self.set_job(job_name)
+        self.status = "FREE"
+        self.train_interrupt = False
+        self.last_trained_job = None
+        self.last_trained_sample = None
+
+        self.sock = socket(AF_INET, SOCK_STREAM)
+        self.sock.bind((self.host, self.port))
+        self.sock.listen(10)
+
+        self.print_lock = Lock()
+        self.status_lock = Lock()
+        self.train_interrupt_lock = Lock()
+        self.last_trained_lock = Lock()
 
         self.step_size = 8
         self.log(cluster)
@@ -47,14 +60,10 @@ class Worker:
 
         self.cumulative_time_saved = 0
 
-
-        build_start = time.time()
         # Load training and test data.
         self.load_data()
         # Define model layers.
         self.build_model(verbose=True)
-        build_end = time.time()
-        self.cumulative_time_saved += build_end - build_start
 
         # The StopAtStepHook handles stopping after running given steps.
         self.hooks = [tf.train.StopAtStepHook(last_step=1000000)]
@@ -68,18 +77,38 @@ class Worker:
         self.loss_list = []
         # self.saver = tf.train.Saver()
 
+        # Limit to 1 thread
+        self.session_conf = tf.ConfigProto(
+            intra_op_parallelism_threads=1,
+            inter_op_parallelism_threads=1)
+
         #GPU settings
-        self.session_conf = tf.ConfigProto()
-        # self.session_conf = tf.ConfigProto(allow_soft_placement=True)
-        # self.session_conf.gpu_options.allow_growth = True
-        # self.session_conf.gpu_options.allocator_type = 'BFC'
+        config = tf.ConfigProto(allow_soft_placement=True)
+        config.gpu_options.allow_growth = True
+        config.gpu_options.allocator_type = 'BFC'
 
         self.log(f"Last sample: {self.steps-self.remaining - 1}, Step size: {self.step_size}")
 
-    def train(self):
-        self.log(f"Starting training job {self.job_name}.")
+    def train(self, job_name="default", lo = 0, hi=None):
+        hi = self.steps - self.remaining
+        with self.status_lock:
+            self.log(f"Status: {self.status}")
+            if self.status == "BUSY" or lo >= hi:
+                return
+            self.status = "BUSY"
+
+        self.set_job(job_name)
+        self.log(f"Starting training job {self.job_name} beginning at sample {lo}.")
         self.log(f"Train folder: {self.train_folder}")
         self.log(f"Job name: {self.job_name}")
+
+        if not lo:
+            lo = 0
+
+        build_start = time.time()
+        self.build_model()
+        build_end = time.time()
+        self.cumulative_time_saved += build_end - build_start
 
         self.log_time(self.job_name, 'start', time.time() - self.cumulative_time_saved)
 
@@ -94,7 +123,7 @@ class Worker:
                 hooks=self.hooks,
                 config=self.session_conf) as mon_sess:
             self.log("Starting training loop.")
-            for j in range(0, self.steps - self.remaining, self.step_size):
+            for j in range(lo, hi, self.step_size):
                 #Feeding step_size-amount data with 0.5 keeping probabilities on DROPOUT LAYERS
                 # print(j)
                 _, c = mon_sess.run(
@@ -106,13 +135,17 @@ class Worker:
                         self.hold_prob2: 0.5
                     })
 
+                with self.train_interrupt_lock:
+                    if self.train_interrupt:
+                        self.log("Breaking training loop.")
+                        break
                 if j % 200 == 0:
                     self.log(f"Trained sample {j}.")
 
-                if (self.global_step.eval(session=mon_sess) % 20 == 0):
-                    with open('./log_folder/' + self.job_name + '_log', 'a') as f:
-                        f.write('\nstep: ' + str(j) + "\tglobal_step: " +
-                                str(self.global_step.eval(session=mon_sess)))
+                # if (self.global_step.eval(session=mon_sess) % 20 == 0):
+                #     with open('./log_folder/' + self.job_name + '_log', 'a') as f:
+                #         f.write('\nstep: ' + str(j) + "\tglobal_step: " +
+                #                 str(self.global_step.eval(session=mon_sess)))
             with open('./log_folder/' + self.job_name + '_log', 'a') as f:
                 f.write('\nstep: ' + str(j) + "\tglobal_step: " +
                         str(self.global_step.eval(session=mon_sess)))
@@ -512,8 +545,9 @@ class Worker:
             self.log("Model built.")
 
     def log(self, s):
-        print(f"===== WORKER_{self.idx}:", end=" ")
-        print(s)
+        with self.print_lock:
+            print(f"===== WORKER_{self.idx}:", end=" ")
+            print(s)
 
     def log_time(self, job_name, action, time):
         if action != 'start' and action != 'end':
