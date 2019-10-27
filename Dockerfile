@@ -11,5 +11,6 @@ RUN pip3 install opencv-python
 RUN pip3 install scipy
 RUN pip3 install scikit-learn
 RUN apt install -y netcat
+RUN apt install -y libsm6 libxext6 libxrender-dev
 
 CMD [ "python3 worker_daemon.py --port=8888" ]    
