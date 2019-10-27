@@ -158,8 +158,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Master.')
     args = parser.parse_args()
 
-    ps0 = WorkerClient('ps0:8888')
-    worker0 = WorkerClient('worker0:8888')
+    ps_host = 'ec2-52-90-16-197.compute-1.amazonaws.com'
+    worker_host = 'ec2-54-172-145-68.compute-1.amazonaws.com'
 
-    ps0.start_ps('test', 2222, 'worker0:2222')
-    worker0.train('test', 'ps0:2222', 'worker0:2222')
+    ps0 = WorkerClient(f'{ps_host}:8888')
+    worker0 = WorkerClient(f'{worker_host}:8888')
+
+
+    print(ps0.status())
+    print(worker.status())
+
+    ps0.start_ps('test', 2222, f'{worker_host}:2222')
+    worker0.train('test', f'{ps_host}:2222', f'{worker_host}:2222')
