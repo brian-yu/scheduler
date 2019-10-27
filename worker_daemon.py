@@ -22,7 +22,8 @@ class WorkerDaemon(Daemon):
             job, ps_hosts, worker_hosts = tokens[1:4]
 
             self.log(f"Training job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
-            time.sleep(10)
+            # time.sleep(10)
+            os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job}")
             self.log("Finished.")
 
             return ""

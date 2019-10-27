@@ -36,10 +36,15 @@ def main(_):
     worker_hosts = FLAGS.worker_hosts.split(",")
     # train_folder = FLAGS.train_folder
     j_name = FLAGS.job
+
+
+
     train_folder = create_folder_get_path(f"./checkpoints/{j_name}")
     create_folder_get_path("./log_folder")
     create_folder_get_path("./accuracy_folder")
     create_folder_get_path("./loss_folder")
+    
+    
     # Create a cluster from the parameter server and worker hosts.
     cluster = tf.train.ClusterSpec({"ps": ps_hosts, "worker": worker_hosts})
 
