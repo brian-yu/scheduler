@@ -313,126 +313,130 @@ def main(_):
 
         #steps = 1000
 
-        #while num_epoch < epochs:
-        with tf.train.MonitoredTrainingSession(
-                master=server.target,
-                is_chief=(FLAGS.task_index == 0),
-                checkpoint_dir=train_folder,
-                hooks=hooks) as mon_sess:
+        if FLAGS.train:
 
-            print('training')
+            #while num_epoch < epochs:
+            with tf.train.MonitoredTrainingSession(
+                    master=server.target,
+                    is_chief=(FLAGS.task_index == 0),
+                    checkpoint_dir=train_folder,
+                    hooks=hooks) as mon_sess:
 
-            # for j in range(0, steps - remaining, step_size):
-            for j in range(0, 200, step_size):
-                #Feeding step_size-amount data with 0.5 keeping probabilities on DROPOUT LAYERS
-                _, c = mon_sess.run(
-                    [train_op, cross_entropy],
-                    feed_dict={
-                        x: X[j:j + step_size],
-                        y_true: Y[j:j + step_size],
-                        hold_prob1: 0.5,
-                        hold_prob2: 0.5
-                    })
+                print('training')
 
-                if (global_step.eval(session=mon_sess) % 20 == 0):
-                    with open('./log_folder/' + j_name + '_log', 'a') as f:
-                        f.write('\nstep: ' + str(j) + "\tglobal_step: " +
-                                str(global_step.eval(session=mon_sess)))
+                # for j in range(0, steps - remaining, step_size):
+                for j in range(0, 200, step_size):
+                    #Feeding step_size-amount data with 0.5 keeping probabilities on DROPOUT LAYERS
+                    _, c = mon_sess.run(
+                        [train_op, cross_entropy],
+                        feed_dict={
+                            x: X[j:j + step_size],
+                            y_true: Y[j:j + step_size],
+                            hold_prob1: 0.5,
+                            hold_prob2: 0.5
+                        })
 
-            saver.save(get_session(mon_sess),
-                       train_folder + "/latest_model_" + j_name + ".ckpt")
+                    if (global_step.eval(session=mon_sess) % 20 == 0):
+                        with open('./log_folder/' + j_name + '_log', 'a') as f:
+                            f.write('\nstep: ' + str(j) + "\tglobal_step: " +
+                                    str(global_step.eval(session=mon_sess)))
 
-        #evaluate the model performance in the current epoch
-        with tf.Session(target=server.target) as sess:
-            with open('./log_folder/' + j_name + '_log', 'a') as f:
-                f.write('\n\nevaluating the accuracy on the validation set')
+                saver.save(get_session(mon_sess),
+                           train_folder + "/latest_model_" + j_name + ".ckpt")
 
-            print(f"CHECKPOINT FOLDER: {train_folder}")
-            ckpt = tf.train.latest_checkpoint(train_folder)
-            print(f"CHECKPOINT: {ckpt}")
-            saver = tf.train.import_meta_graph(
-                train_folder + "/latest_model_" + j_name + ".ckpt.meta",
-                clear_devices=True)
-            saver.restore(sess, ckpt)
-            # saver.restore(sess,
-            #               train_folder + "/latest_model_" + j_name + ".ckpt")
+        if FLAGS.validate:
+            #evaluate the model performance in the current epoch
+            with tf.Session(target=server.target) as sess:
+                with open('./log_folder/' + j_name + '_log', 'a') as f:
+                    f.write('\n\nevaluating the accuracy on the validation set')
 
-            cv_auc_list = []
-            cv_acc_list = []
-            cv_loss_list = []
-            for v in range(0,
-                           len(cv_x) - int(len(cv_x) % validating_size),
-                           validating_size):
+                print(f"CHECKPOINT FOLDER: {train_folder}")
+                ckpt = tf.train.latest_checkpoint(train_folder)
+                print(f"CHECKPOINT: {ckpt}")
+                saver = tf.train.import_meta_graph(
+                    train_folder + "/latest_model_" + j_name + ".ckpt.meta",
+                    clear_devices=True)
+                saver.restore(sess, ckpt)
+                # saver.restore(sess,
+                #               train_folder + "/latest_model_" + j_name + ".ckpt")
 
-                acc_on_cv, loss_on_cv, preds = sess.run(
-                    [acc, cross_entropy,
-                     tf.nn.softmax(y_pred)],
-                    feed_dict={
-                        x: cv_x[v:v + validating_size],
-                        y_true: cv_y[v:v + validating_size],
-                        hold_prob1: 1.0,
-                        hold_prob2: 1.0
-                    })
+                cv_auc_list = []
+                cv_acc_list = []
+                cv_loss_list = []
+                for v in range(0,
+                               len(cv_x) - int(len(cv_x) % validating_size),
+                               validating_size):
 
-                auc_on_cv = roc_auc_score(cv_y[v:v + validating_size], preds)
-                cv_acc_list.append(acc_on_cv)
-                cv_auc_list.append(auc_on_cv)
-                cv_loss_list.append(loss_on_cv)
+                    acc_on_cv, loss_on_cv, preds = sess.run(
+                        [acc, cross_entropy,
+                         tf.nn.softmax(y_pred)],
+                        feed_dict={
+                            x: cv_x[v:v + validating_size],
+                            y_true: cv_y[v:v + validating_size],
+                            hold_prob1: 1.0,
+                            hold_prob2: 1.0
+                        })
 
-            acc_cv_ = round(np.mean(cv_acc_list), 5)
-            auc_cv_ = round(np.mean(cv_auc_list), 5)
-            loss_cv_ = round(np.mean(cv_loss_list), 5)
-            acc_list.append(acc_cv_)
-            auc_list.append(auc_cv_)
-            loss_list.append(loss_cv_)
-            with open('./log_folder/' + j_name + '_log', 'a') as f:
-                f.write("\nAccuracy:" + str(acc_cv_) + "\tLoss:" +
-                        str(loss_cv_) + "\tAUC:" + str(auc_cv_))
+                    auc_on_cv = roc_auc_score(cv_y[v:v + validating_size], preds)
+                    cv_acc_list.append(acc_on_cv)
+                    cv_auc_list.append(auc_on_cv)
+                    cv_loss_list.append(loss_on_cv)
+
+                acc_cv_ = round(np.mean(cv_acc_list), 5)
+                auc_cv_ = round(np.mean(cv_auc_list), 5)
+                loss_cv_ = round(np.mean(cv_loss_list), 5)
+                acc_list.append(acc_cv_)
+                auc_list.append(auc_cv_)
+                loss_list.append(loss_cv_)
+                with open('./log_folder/' + j_name + '_log', 'a') as f:
+                    f.write("\nAccuracy:" + str(acc_cv_) + "\tLoss:" +
+                            str(loss_cv_) + "\tAUC:" + str(auc_cv_))
             # with open('')
         #num_epoch += 1
 
-        #Test the model performance after training
-        with tf.Session(target=server.target) as sess:
-            with open('./log_folder/' + j_name + '_log', 'a') as f:
-                f.write('\n\ntest the model accuracy after training')
+        if FLAGS.test:
+            #Test the model performance after training
+            with tf.Session(target=server.target) as sess:
+                with open('./log_folder/' + j_name + '_log', 'a') as f:
+                    f.write('\n\ntest the model accuracy after training')
 
-            saver.restore(sess,
-                          train_folder + "/latest_model_" + j_name + ".ckpt")
-            test_auc_list = []
-            test_acc_list = []
-            test_loss_list = []
-            for v in range(0,
-                           len(test_x) - int(len(test_x) % validating_size),
-                           validating_size):
+                saver.restore(sess,
+                              train_folder + "/latest_model_" + j_name + ".ckpt")
+                test_auc_list = []
+                test_acc_list = []
+                test_loss_list = []
+                for v in range(0,
+                               len(test_x) - int(len(test_x) % validating_size),
+                               validating_size):
 
-                acc_on_test, loss_on_test, preds = sess.run(
-                    [acc, cross_entropy,
-                     tf.nn.softmax(y_pred)],
-                    feed_dict={
-                        x: test_x[v:v + validating_size],
-                        y_true: test_y[v:v + validating_size],
-                        hold_prob1: 1.0,
-                        hold_prob2: 1.0
-                    })
+                    acc_on_test, loss_on_test, preds = sess.run(
+                        [acc, cross_entropy,
+                         tf.nn.softmax(y_pred)],
+                        feed_dict={
+                            x: test_x[v:v + validating_size],
+                            y_true: test_y[v:v + validating_size],
+                            hold_prob1: 1.0,
+                            hold_prob2: 1.0
+                        })
 
-                auc_on_test = roc_auc_score(test_y[v:v + validating_size],
-                                            preds)
-                test_acc_list.append(acc_on_test)
-                test_auc_list.append(auc_on_test)
-                test_loss_list.append(loss_on_test)
+                    auc_on_test = roc_auc_score(test_y[v:v + validating_size],
+                                                preds)
+                    test_acc_list.append(acc_on_test)
+                    test_auc_list.append(auc_on_test)
+                    test_loss_list.append(loss_on_test)
 
-            test_acc_ = round(np.mean(test_acc_list), 5)
-            test_auc_ = round(np.mean(test_auc_list), 5)
-            test_loss_ = round(np.mean(test_loss_list), 5)
-            with open('./log_folder/' + j_name + '_log', 'a') as f:
-                f.write("\nTest Results are below:")
-                f.write("\nAccuracy: " + str(test_acc_) + "\tLoss: " +
-                        str(test_loss_) + "\tAUC: " + str(test_auc_))
+                test_acc_ = round(np.mean(test_acc_list), 5)
+                test_auc_ = round(np.mean(test_auc_list), 5)
+                test_loss_ = round(np.mean(test_loss_list), 5)
+                with open('./log_folder/' + j_name + '_log', 'a') as f:
+                    f.write("\nTest Results are below:")
+                    f.write("\nAccuracy: " + str(test_acc_) + "\tLoss: " +
+                            str(test_loss_) + "\tAUC: " + str(test_auc_))
 
-            with open('./loss_folder/loss_' + j_name, 'w') as f:
-                f.write(str(test_loss_))
-            with open('./accuracy_folder/accuracy_' + j_name, 'w') as f:
-                f.write(str(test_acc_))
+                with open('./loss_folder/loss_' + j_name, 'w') as f:
+                    f.write(str(test_loss_))
+                with open('./accuracy_folder/accuracy_' + j_name, 'w') as f:
+                    f.write(str(test_acc_))
 
 
 if __name__ == "__main__":
@@ -472,6 +476,7 @@ if __name__ == "__main__":
     parser.add_argument('--validate', help='whether to validate or not', action='store_true')
     parser.add_argument('--test', help='whether to test or not', action='store_true')
     FLAGS, unparsed = parser.parse_known_args()
+    print(FLAGS)
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
 
     job_name = FLAGS.job

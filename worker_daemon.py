@@ -34,13 +34,41 @@ class WorkerDaemon(Daemon):
             try:
                 job, ps_hosts, worker_hosts = tokens[1:4]
                 with self.worker_status_lock:
-                    self.worker_status = Status.TRAINING
+                    self.worker_status = Status.BUSY
                 self.log(f"Training job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
                 '''
                 For timing, maybe have task2.py log times in ./log_folder/times.txt.
                 Then the worker daemon will read the times and send salient timing information.
                 '''
-                os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job}")
+                os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job} --train")
+                with self.worker_status_lock:
+                    self.worker_status = Status.FREE
+                self.log("Finished.")
+            except Exception as err:
+                self.log(f"Error: {err}")
+
+        elif Command(command_str) == Command.VALIDATE:
+
+            try:
+                job, ps_hosts, worker_hosts = tokens[1:4]
+                with self.worker_status_lock:
+                    self.worker_status = Status.BUSY
+                self.log(f"Validating job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
+                os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job} --validate")
+                with self.worker_status_lock:
+                    self.worker_status = Status.FREE
+                self.log("Finished.")
+            except Exception as err:
+                self.log(f"Error: {err}")
+
+        elif Command(command_str) == Command.TEST:
+
+            try:
+                job, ps_hosts, worker_hosts = tokens[1:4]
+                with self.worker_status_lock:
+                    self.worker_status = Status.BUSY
+                self.log(f"Validating job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
+                os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job} --test")
                 with self.worker_status_lock:
                     self.worker_status = Status.FREE
                 self.log("Finished.")
