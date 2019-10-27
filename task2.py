@@ -39,11 +39,11 @@ def main(_):
 
 
 
-    train_folder = create_folder_get_path(f"./checkpoints/{j_name}")
-    create_folder_get_path("./log_folder")
-    create_folder_get_path("./accuracy_folder")
-    create_folder_get_path("./loss_folder")
-    
+    train_folder = create_folder_get_path(f"checkpoints/{j_name}")
+    create_folder_get_path("log_folder")
+    create_folder_get_path("accuracy_folder")
+    create_folder_get_path("loss_folder")
+
     
     # Create a cluster from the parameter server and worker hosts.
     cluster = tf.train.ClusterSpec({"ps": ps_hosts, "worker": worker_hosts})
