@@ -72,23 +72,12 @@ class WorkerClient:
     #     return self.sendRecv(f"RESET")
 
 class Job:
-    def __init__(self, job_name="default", epochs=1, num_samples=4800, batch_size=120):
+    def __init__(self, job_name="default", epochs=3):
         self.job_name = job_name
         self.epochs = epochs
         self.curr_epoch = 0
-        self.num_samples = num_samples
-        self.curr_sample = 0
         self.start_time = None
         self.completed = False
-
-    def set_curr_sample(self, i):
-        self.curr_sample = i
-        if self.curr_sample >= self.num_samples - 1:
-            self.curr_epoch += 1
-            if self.curr_epoch >= self.epochs:
-                self.completed = True
-            else:
-                self.curr_sample = 0
 
 class Master:
 

@@ -340,6 +340,7 @@ def main(_):
                         with open('./log_folder/' + j_name + '_log', 'a') as f:
                             f.write('\nstep: ' + str(j) + "\tglobal_step: " +
                                     str(global_step.eval(session=mon_sess)))
+                print('finished training')
 
                 saver.save(get_session(mon_sess),
                            train_folder + "/latest_model_" + j_name + ".ckpt")
