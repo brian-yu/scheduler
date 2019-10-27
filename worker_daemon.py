@@ -45,6 +45,7 @@ class WorkerDaemon(Daemon):
         elif Command(command_str) == Command.START_PS:
             try:
                 job, ps_hosts, worker_hosts = tokens[1:4]
+                self.log(f"Starting PS for job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
                 proc = subprocess.Popen(
                     ['python3', 'task2.py',
                      f"--ps_hosts={ps_hosts}",
@@ -60,6 +61,8 @@ class WorkerDaemon(Daemon):
         elif Command(command_str) == Command.STOP_PS:
             try:
                 job = tokens[1]
+
+                self.log(f"Killing PS for job={job}")
                 job_proc = self.job_ps_process[job]
                 job_proc.terminate()
 
