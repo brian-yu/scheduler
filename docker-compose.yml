@@ -2,30 +2,35 @@ version: '3'
 services:
   ps0:
     build: .
+    container_name: ps0
     networks:
       - cluster
     command: python3 worker_daemon.py --port=8888
 
   ps1:
     build: .
+    container_name: ps1
     networks:
       - cluster
     command: python3 worker_daemon.py --port=8888
 
   worker0:
     build: .
+    container_name: worker0
     networks:
       - cluster
     command: python3 worker_daemon.py --port=8888
 
   worker1:
     build: .
+    container_name: worker1
     networks:
       - cluster
     command: python3 worker_daemon.py --port=8888
 
-  master:
+  scheduler:
     build: .
+    container_name: scheduler
     networks:
       - cluster
     command: bash

@@ -7,5 +7,6 @@ RUN ls
 
 RUN pip3 uninstall --yes numpy
 RUN pip3 install numpy==1.16.2
+RUN apt install -y netcat
 
 CMD [ "python3 worker_daemon.py --port=8888" ]    
