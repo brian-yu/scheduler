@@ -323,7 +323,7 @@ def main(_):
             print('training')
 
             # for j in range(0, steps - remaining, step_size):
-            for j in range(0, 500, step_size):
+            for j in range(0, 200, step_size):
                 #Feeding step_size-amount data with 0.5 keeping probabilities on DROPOUT LAYERS
                 _, c = mon_sess.run(
                     [train_op, cross_entropy],
@@ -351,7 +351,7 @@ def main(_):
             ckpt = tf.train.latest_checkpoint(train_folder)
             print(f"CHECKPOINT: {ckpt}")
             saver = tf.train.import_meta_graph(
-                self.train_folder + "/latest_model_" + self.job_name + ".ckpt.meta",
+                train_folder + "/latest_model_" + j_name + ".ckpt.meta",
                 clear_devices=True)
             saver.restore(sess, ckpt)
             # saver.restore(sess,

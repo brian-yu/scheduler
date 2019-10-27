@@ -10,6 +10,7 @@ from constants import Command, Status
 class WorkerClient:
     def __init__(self, address_str):
         self.address = self.parse_address(address_str)
+        self.host, self.port = self.address
         self.address_str = address_str
         self.job = None
 
@@ -37,10 +38,10 @@ class WorkerClient:
         self.job = job
         return self.send(f"{Command.TRAIN.value} {job_name} {ps_host} {worker_host}")
 
-    def start_ps(self):
-        return self.send(f"{Command.START_PS.value} {job_name} {ps_host} {worker_host}")
+    def start_ps(self, job_name, port, worker_host):
+        return self.send(f"{Command.START_PS.value} {job_name} {self.host}:{port} {worker_host}")
 
-    def stop_ps(self):
+    def stop_ps(self, job_name):
         return self.send(f"{Command.STOP_PS.value} {job_name}")
 
     def status(self):
@@ -168,3 +169,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Master.')
     args = parser.parse_args()
 
+    ps0 = WorkerClient('ps0:8888')
+    worker0 = WorkerClient('worker0:8888')
+
+    ps0.start_ps('test', 2222, 'worker0:2222')
+    worker0.train('test', 'ps0:2222', 'worker0:2222')

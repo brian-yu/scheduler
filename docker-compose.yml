@@ -33,7 +33,7 @@ services:
     container_name: scheduler
     networks:
       - cluster
-    command: bash
+    command: python3 scheduler.py
 
 networks:
   cluster:
