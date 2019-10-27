@@ -1,0 +1,30 @@
+version: '3'
+services:
+  ps0:
+    build: .
+    networks:
+      - cluster
+
+  ps1:
+    build: .
+    networks:
+      - cluster
+
+  worker0:
+    build: .
+    networks:
+      - cluster
+
+  worker1:
+    build: .
+    networks:
+      - cluster
+
+  master:
+    build:
+    networks:
+      - cluster
+    command: bash
+
+networks:
+  cluster:
