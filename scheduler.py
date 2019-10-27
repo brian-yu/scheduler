@@ -38,6 +38,10 @@ class WorkerClient:
         self.job = job_name
         return self.send(f"{Command.TRAIN.value} {job_name} {ps_host} {worker_host}")
 
+    def validate(self, job_name, ps_host, worker_host):
+        self.job = job_name
+        return self.send(f"{Command.VALIDATE.value} {job_name} {ps_host} {worker_host}")
+
     def start_ps(self, job_name, port, worker_host):
         return self.send(f"{Command.START_PS.value} {job_name} {self.host}:{port} {worker_host}")
 
@@ -45,7 +49,7 @@ class WorkerClient:
         return self.send(f"{Command.STOP_PS.value} {job_name}")
 
     def status(self):
-        status = self.sendRecv(Command.POLL.value).split()
+        status = self.sendRecv(Command.POLL.value)
         return status
 
     def reset(self):
@@ -166,7 +170,10 @@ if __name__ == "__main__":
 
 
     print(ps0.status())
-    print(worker.status())
+    print(worker0.status())
 
-    ps0.start_ps('test', 2222, f'{worker_host}:2222')
-    worker0.train('test', f'{ps_host}:2222', f'{worker_host}:2222')
+    # ps0.start_ps('test', 2222, f'{worker_host}:2222')
+    
+    # worker0.train('test', f'{ps_host}:2222', f'{worker_host}:2222')
+
+    worker0.validate('test', f'{ps_host}:2222', f'{worker_host}:2222')
