@@ -1,44 +1,24 @@
 version: '3'
 services:
-  ps0:
+  daemon:
     build: .
-    container_name: ps0
-    networks:
-      - cluster
+    container_name: daemon
+    volumes:
+      - /home/ubuntu/scheduler:/root
+    network_mode: "host"
     command: python3 worker_daemon.py --port=8888
 
-  ps1:
-    build: .
-    container_name: ps1
-    networks:
-      - cluster
-    command: python3 worker_daemon.py --port=8888
-
-  worker0:
-    build: .
-    container_name: worker0
-    networks:
-      - cluster
-    command: python3 worker_daemon.py --port=8888
-
-  worker1:
-    build: .
-    container_name: worker1
-    networks:
-      - cluster
-    command: python3 worker_daemon.py --port=8888
-
-  scheduler:
-    build: .
-    container_name: scheduler
-    depends_on:
-      - ps0
-      - ps1
-      - worker0
-      - worker1
-    networks:
-      - cluster
-    command: python3 scheduler.py
-
-networks:
-  cluster:
+  ftp:
+    image: stilliard/pure-ftpd:hardened
+    container_name: ftp
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+    volumes:
+      - "/root/scheduler/checkpoints/data:/home/username/"
+    environment:
+      PUBLICHOST: "0.0.0.0"
+      FTP_USER_NAME: test
+      FTP_USER_PASS: test
+      FTP_USER_HOME: /home/username
+    restart: always
