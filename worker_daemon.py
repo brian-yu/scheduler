@@ -13,7 +13,12 @@ class Command(Enum):
     TRAIN = "TRAIN"
     START_PS = "START_PS"
     STOP_PS = "STOP_PS"
+    POLL = "POLL"
+    RESET = "RESET"
 
+class Status(Enum):
+    FREE = "FREE"
+    TRAINING = "TRAINING"
 
 class WorkerDaemon(Daemon):
 
@@ -22,6 +27,8 @@ class WorkerDaemon(Daemon):
         Daemon.__init__(self, host, port, name)
 
         self.job_ps_process = {}
+        self.worker_status = Status.FREE
+        self.worker_status_lock = Lock()
 
     def receive(self, message):
         tokens = message.split()
@@ -34,10 +41,16 @@ class WorkerDaemon(Daemon):
 
             try:
                 job, ps_hosts, worker_hosts = tokens[1:4]
-
+                with self.worker_status_lock:
+                    self.worker_status = Status.TRAINING
                 self.log(f"Training job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
-                # time.sleep(10)
+                '''
+                For timing, maybe have task2.py log times in ./log_folder/times.txt.
+                Then the worker daemon will read the times and send salient timing information.
+                '''
                 os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job}")
+                with self.worker_status_lock:
+                    self.worker_status = Status.FREE
                 self.log("Finished.")
             except Exception as err:
                 self.log(f"Error: {err}")
@@ -65,7 +78,15 @@ class WorkerDaemon(Daemon):
             except Exception as err:
                 self.log(f"Error: {err}")
 
+        elif Command(command_str) == Command.POLL:
+            try:
+                with self.worker_status_lock:
+                    status = self.worker_status
+                return status.value
 
+            except Exception as err:
+                self.log(f"Error: {err}")
+            
         return "Done"
 
 
