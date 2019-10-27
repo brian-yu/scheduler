@@ -38,8 +38,10 @@ class Daemon:
                 # self.log(req)
                 response = self.receive(req)
                 connection.send(response.encode())
+                connection.close()
                 return True
             else:
+                connection.close()
                 raise Exception('Client disconnected')
             # except Exception as e:
             #     self.log(f"Unexpected error: {e}")
