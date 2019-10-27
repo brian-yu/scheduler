@@ -21,11 +21,24 @@ def get_session(sess):
         session = session._sess
     return session
 
+def create_folder_get_path(relative_path):
+    # train_dir = os.path.join(os.getcwd(), f"{self.job_name}_checkpoints")
+    # if not os.path.exists(train_dir):
+    #     os.makedirs(train_dir)
+    # self.train_folder = train_dir
+    path = os.path.join(os.getcwd(), relative_path)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
 
 def main(_):
     ps_hosts = FLAGS.ps_hosts.split(",")
     worker_hosts = FLAGS.worker_hosts.split(",")
-    train_folder = FLAGS.train_folder
+    # train_folder = FLAGS.train_folder
+    train_folder = create_folder_get_path(f"./checkpoints/{j_name}")
+    create_folder_get_path("./log_folder")
+    create_folder_get_path("./accuracy_folder")
+    create_folder_get_path("./loss_folder")
     j_name = FLAGS.job
     # Create a cluster from the parameter server and worker hosts.
     cluster = tf.train.ClusterSpec({"ps": ps_hosts, "worker": worker_hosts})
@@ -430,7 +443,7 @@ if __name__ == "__main__":
                         help="Index of task within the job")
     parser.add_argument("--train_folder",
                         type=str,
-                        default="/Users/brian/dev/projects/research/Scheduler",
+                        default="./checkpoints/default",
                         help="indicate the training directory")
     parser.add_argument("--job",
                         type=str,
@@ -444,5 +457,5 @@ if __name__ == "__main__":
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
 
     job_name = FLAGS.job
-    task_index = FLAGS.task
+    # task_index = FLAGS.task
     # completion_task(job_name, task_index, worker_ip)
