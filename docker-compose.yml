@@ -21,7 +21,7 @@ services:
       - cluster
 
   master:
-    build:
+    build: .
     networks:
       - cluster
     command: bash
