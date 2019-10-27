@@ -9,3 +9,5 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 
 docker build -t daemon .
+
+export PUBLIC_DNS_NAME=`curl -s http://169.254.169.254/latest/meta-data/public-hostname`
