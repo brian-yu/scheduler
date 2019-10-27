@@ -21,7 +21,9 @@ class WorkerDaemon(Daemon):
         if command == "TRAIN":
             job, ps_hosts, worker_hosts = tokens[1:4]
 
-            self.log(f"job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
+            self.log(f"Training job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
+            time.sleep(10)
+            self.log("Finished.")
 
             return ""
 
