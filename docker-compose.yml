@@ -15,10 +15,10 @@ services:
       - "21:21"
       - "30000-30009:30000-30009"
     volumes:
-      - "/root/scheduler/checkpoints/data:/home/username/"
+      - "/home/ubuntu/scheduler/checkpoints/:/home/checkpoints/"
     environment:
       PUBLICHOST: "0.0.0.0"
-      FTP_USER_NAME: test
+      FTP_USER_NAME: checkpoints
       FTP_USER_PASS: test
-      FTP_USER_HOME: /home/username
+      FTP_USER_HOME: /home/checkpoints
     restart: always
