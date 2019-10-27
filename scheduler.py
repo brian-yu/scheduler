@@ -35,7 +35,7 @@ class WorkerClient:
         sock.close()
 
     def train(self, job_name, ps_host, worker_host):
-        self.job = job
+        self.job = job_name
         return self.send(f"{Command.TRAIN.value} {job_name} {ps_host} {worker_host}")
 
     def start_ps(self, job_name, port, worker_host):

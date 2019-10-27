@@ -31,6 +31,11 @@ services:
   scheduler:
     build: .
     container_name: scheduler
+    depends_on:
+      - ps0
+      - ps1
+      - worker0
+      - worker1
     networks:
       - cluster
     command: python3 scheduler.py
