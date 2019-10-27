@@ -91,9 +91,10 @@ class WorkerDaemon(Daemon):
         return "Done"
 
     def cleanup(self, signal, frame):
-        self.log("Killing all PS processes.")
+        self.log(f"Killing {len(self.job_ps_process)} PS processes.")
         for proc in self.job_ps_process.values():
             proc.terminate()
+        self.sock.close()
         self.log("Exiting.")
         sys.exit(0)
 
