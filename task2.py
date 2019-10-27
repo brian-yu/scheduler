@@ -322,7 +322,8 @@ def main(_):
 
             print('training')
 
-            for j in range(0, steps - remaining, step_size):
+            # for j in range(0, steps - remaining, step_size):
+            for j in range(0, 500, step_size):
                 #Feeding step_size-amount data with 0.5 keeping probabilities on DROPOUT LAYERS
                 _, c = mon_sess.run(
                     [train_op, cross_entropy],
@@ -345,8 +346,17 @@ def main(_):
         with tf.Session(target=server.target) as sess:
             with open('./log_folder/' + j_name + '_log', 'a') as f:
                 f.write('\n\nevaluating the accuracy on the validation set')
-            saver.restore(sess,
-                          train_folder + "/latest_model_" + j_name + ".ckpt")
+
+
+            ckpt = tf.train.latest_checkpoint(train_folder)
+            print(f"CHECKPOINT: {ckpt}")
+            # saver = tf.train.import_meta_graph(
+            #     self.train_folder + "/latest_model_" + self.job_name + ".ckpt.meta",
+            #     clear_devices=True)
+            saver.restore(sess, ckpt)
+            # saver.restore(sess,
+            #               train_folder + "/latest_model_" + j_name + ".ckpt")
+
             cv_auc_list = []
             cv_acc_list = []
             cv_loss_list = []
@@ -458,6 +468,9 @@ if __name__ == "__main__":
                         type=str,
                         default="default",
                         help="indicate the index of the task")
+    parser.add_argument('--train', help='whether to train or not', action='store_true')
+    parser.add_argument('--validate', help='whether to validate or not', action='store_true')
+    parser.add_argument('--test', help='whether to test or not', action='store_true')
     FLAGS, unparsed = parser.parse_known_args()
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
 
