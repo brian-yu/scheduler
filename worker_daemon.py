@@ -51,8 +51,7 @@ class WorkerDaemon(Daemon):
                      f"--ps_hosts={ps_hosts}",
                      f"--worker_hosts={worker_hosts}",
                      "--job_name=ps --task_index=0",
-                     f"--job={job}"],
-                    shell=True)
+                     f"--job={job}"])
                 self.job_ps_process[job] = proc
 
             except Exception as err:
