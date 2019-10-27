@@ -347,12 +347,12 @@ def main(_):
             with open('./log_folder/' + j_name + '_log', 'a') as f:
                 f.write('\n\nevaluating the accuracy on the validation set')
 
-
+            print(f"CHECKPOINT FOLDER: {train_folder}")
             ckpt = tf.train.latest_checkpoint(train_folder)
             print(f"CHECKPOINT: {ckpt}")
-            # saver = tf.train.import_meta_graph(
-            #     self.train_folder + "/latest_model_" + self.job_name + ".ckpt.meta",
-            #     clear_devices=True)
+            saver = tf.train.import_meta_graph(
+                self.train_folder + "/latest_model_" + self.job_name + ".ckpt.meta",
+                clear_devices=True)
             saver.restore(sess, ckpt)
             # saver.restore(sess,
             #               train_folder + "/latest_model_" + j_name + ".ckpt")
