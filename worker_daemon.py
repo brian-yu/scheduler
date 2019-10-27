@@ -1,25 +1,15 @@
 import argparse
 import sys
 import os
+import shutil
 import time
+import signal
+import subprocess
 from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread, Lock
-import subprocess
-from enum import Enum
-import signal
 
 from daemon import Daemon
-
-class Command(Enum):
-    TRAIN = "TRAIN"
-    START_PS = "START_PS"
-    STOP_PS = "STOP_PS"
-    POLL = "POLL"
-    RESET = "RESET"
-
-class Status(Enum):
-    FREE = "FREE"
-    TRAINING = "TRAINING"
+from constants import Command, Status
 
 class WorkerDaemon(Daemon):
 
@@ -28,6 +18,7 @@ class WorkerDaemon(Daemon):
         Daemon.__init__(self, host, port, name)
 
         self.job_ps_process = {}
+        # self.job_worker_process = {}
         self.worker_status = Status.FREE
         self.worker_status_lock = Lock()
 
@@ -87,8 +78,29 @@ class WorkerDaemon(Daemon):
 
             except Exception as err:
                 self.log(f"Error: {err}")
+
+        elif Command(command_str) == Command.RESET:
+            try:
+                self.delete_directory_contents('./checkpoints')
+                self.delete_directory_contents('./log_folder')
+                self.delete_directory_contents('./loss_folder')
+                self.delete_directory_contents('./accuracy_folder')
+            except Exception as err:
+                self.log(f"Error: {err}")
             
         return "Done"
+
+    def delete_directory_contents(self, rel_path):
+        path = os.path.join(os.getcwd(), rel_path)
+        for file in os.listdir(path):
+            file_path = os.path.join(folder, file)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print(e)
 
     def cleanup(self, signal, frame):
         self.log(f"Killing {len(self.job_ps_process)} PS processes.")
