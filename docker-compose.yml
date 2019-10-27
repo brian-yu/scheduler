@@ -4,21 +4,25 @@ services:
     build: .
     networks:
       - cluster
+    command: python3 worker_daemon.py --port=8888
 
   ps1:
     build: .
     networks:
       - cluster
+    command: python3 worker_daemon.py --port=8888
 
   worker0:
     build: .
     networks:
       - cluster
+    command: python3 worker_daemon.py --port=8888
 
   worker1:
     build: .
     networks:
       - cluster
+    command: python3 worker_daemon.py --port=8888
 
   master:
     build: .
