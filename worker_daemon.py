@@ -34,7 +34,7 @@ class WorkerDaemon(Daemon):
             command = Command(command_str)
         except Exception as err:
             self.log(f"Error: {err}")
-            return "Oops"
+            return "Oops. Invalid command."
 
         if command == Command.TRAIN:
 
@@ -215,6 +215,7 @@ class WorkerDaemon(Daemon):
         sys.exit(0)
 
     def hostname(self, addr):
+        self.log(f"Finding hostname for {addr}")
         return addr.split(":")[0]
 
     def create_dir(self, path):
