@@ -169,7 +169,7 @@ class WorkerDaemon(Daemon):
         # to determine which .index file to download from the PS.
 
         fnames = ['checkpoint']
-        self.download_train_files(job, prev_worker, fnames)
+        self.download_files(job, prev_worker, fnames)
 
         # Download .index file from PS
         with open(f"checkpoints/{job}/checkpoint") as f:
