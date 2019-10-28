@@ -42,7 +42,7 @@ class WorkerDaemon(Daemon):
                 job, ps_host, worker_host, prev_worker_host = tokens[1:5]
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
-                self.log(f"Training job={job}, ps_hosts={ps_host}, worker_hosts={worker_host}")
+                self.log(f"Training job={job}, ps_hosts={ps_host}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
                 '''
                 For timing, maybe have task2.py log times in ./log_folder/times.txt.
                 Then the worker daemon will read the times and send salient timing information.
