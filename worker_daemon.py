@@ -167,8 +167,8 @@ class WorkerDaemon(Daemon):
 
         # Need to Download checkpoint and .meta files first, so that we can read them 
         # to determine which .index file to download from the PS.
-        self.log(f"prev_worker: {prev_worker}, curr_host: {self.host}")
-        if prev_worker != self.host:
+        self.log(f"Same as previous worker? {self.same_node(prev_worker)}")
+        if not self.same_node(prev_worker):
             fnames = ['checkpoint']
             self.download_files(job, prev_worker, fnames)
 
@@ -183,7 +183,7 @@ class WorkerDaemon(Daemon):
             # Download .index file from ps
             self.download_files(job, ps, [index])
             # Download .meta file from prev_worker
-            if prev_worker != self.host:
+            if not self.same_node(prev_worker):
                 self.download_files(job, prev_worker, [meta])
 
     def download_latest_model(self, job, ps_hosts):

@@ -48,6 +48,9 @@ class Daemon:
             #     connection.close()
             #     return False
 
+    def same_node(self, host):
+        return host == self.host
+
     def listen(self, verbose=False):
         self.log(f"Listening on {self.host}:{self.port}")
         while True:
