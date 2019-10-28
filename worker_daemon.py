@@ -237,11 +237,13 @@ class WorkerDaemon(Daemon):
     def delete_old_checkpoints(self, job):
         # Get all model.ckpt filenames
         ckpt_files = glob.glob(f'checkpoints/{job}/model.ckpt-*')
+        if not ckpt_files:
+            return
         self.log(f"ckpt files for {job}: {ckpt_files}")
         # Find latest version number
         ckpt_versions = sorted(
             [int(re.search('ckpt-(\d+).', file).group(1)) for file in ckpt_files])
-        keep = ckpt[-1]
+        keep = ckpt_versions[-1]
         # Delete all ckpt files that are not the latest version
         for file in ckpt_files:
             if int(re.search('ckpt-(\d+).', file).group(1)) != keep:
