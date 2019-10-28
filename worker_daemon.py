@@ -144,7 +144,7 @@ class WorkerDaemon(Daemon):
     # TODO: Download `checkpoint` and `.meta` files from prev worker.
     def download_train_files(self, job, ps_hosts):
         with open(f"checkpoints/{job}/checkpoint") as f:
-            full_path = f.readline().split(":")[1]
+            full_path = f.readline().rstrip("\n").split(":")[1]
             fname = full_path.split("/")[-1]
             ps_host = ps_hosts.split(":")[0]
             self.download_files(job, ps_host, [fname])
