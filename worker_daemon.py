@@ -174,7 +174,9 @@ class WorkerDaemon(Daemon):
         # Download .index file from PS
         with open(f"checkpoints/{job}/checkpoint") as f:
             full_path = f.readline().rstrip("\n").rstrip("\"").split(":")[1]
+            self.log(f"CKPT_PATH={full_path}")
             ckpt = full_path.split("/")[-1]
+            self.log(f"CKPT_FILE={ckpt}")
             index = f"{ckpt}.index"
             meta = f"{ckpt}.meta"
             # Download .index file from ps

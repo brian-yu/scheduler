@@ -230,6 +230,7 @@ class Scheduler:
 
                         if job not in self.currently_training_jobs:
                             print(f"Assigning {job} to Worker_{worker_id}")
+                            job.assign_to(worker)
                             self.currently_training_jobs.add(job)
                             job.ps.start_ps(job, worker)
                             worker.train(job)
