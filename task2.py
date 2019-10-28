@@ -54,8 +54,10 @@ def main(_):
                              task_index=FLAGS.task_index)
 
     if tf.test.gpu_device_name():
-        print("GPU isn't gonna be used even if you have")
-        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+        # print("GPU isn't gonna be used even if you have")
+        # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+        print("GPU found")
+        os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     else:
         print("No GPU Found")
         print("CPU is gonna be used")
@@ -308,7 +310,7 @@ def main(_):
         loss_list = []
         saver = tf.train.Saver()
 
-        config = tf.ConfigProto(device_count={'GPU': 0})
+        # config = tf.ConfigProto(device_count={'GPU': 0})
         #num_epoch = 1
 
         #steps = 1000
