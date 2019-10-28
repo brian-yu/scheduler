@@ -145,7 +145,7 @@ class WorkerDaemon(Daemon):
     def download_train_files(self, job, ps_hosts):
         with open(f"checkpoints/{job}/checkpoint") as f:
             full_path = f.readline().rstrip("\n").rstrip("\"").split(":")[1]
-            fname = full_path.split("/")[-1]
+            fname = f"{full_path.split("/")[-1]}.index"
             ps_host = ps_hosts.split(":")[0]
             self.download_files(job, ps_host, [fname])
 
