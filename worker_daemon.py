@@ -167,6 +167,7 @@ class WorkerDaemon(Daemon):
 
         # Need to Download checkpoint and .meta files first, so that we can read them 
         # to determine which .index file to download from the PS.
+        self.log(f"prev_worker: {prev_worker}, curr_host: {self.host}")
         if prev_worker != self.host:
             fnames = ['checkpoint']
             self.download_files(job, prev_worker, fnames)
