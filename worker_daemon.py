@@ -145,9 +145,10 @@ class WorkerDaemon(Daemon):
     def download_train_files(self, job, ps_hosts):
         with open(f"checkpoints/{job}/checkpoint") as f:
             full_path = f.readline().rstrip("\n").rstrip("\"").split(":")[1]
-            fname = f"{full_path.split("/")[-1]}.index"
+            ckpt = full_path.split("/")[-1]
+            index = f"{ckpt}.index"
             ps_host = ps_hosts.split(":")[0]
-            self.download_files(job, ps_host, [fname])
+            self.download_files(job, ps_host, [index])
 
     def download_latest_model(self, job, ps_hosts):
         # Download 'latest_model_{jobName}.ckpt' .index and .data files.
