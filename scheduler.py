@@ -7,6 +7,17 @@ from collections import deque
 
 from constants import Command, Status
 
+
+PS_HOSTS = [
+    'ec2-52-90-16-197.compute-1.amazonaws.com',
+]
+
+WORKER_HOSTS = [
+    'ec2-54-172-145-68.compute-1.amazonaws.com',
+]
+
+
+
 class WorkerClient:
     def __init__(self, address_str):
         self.address = self.parse_address(address_str)
@@ -48,6 +59,9 @@ class WorkerClient:
     def stop_ps(self, job_name):
         return self.send(f"{Command.STOP_PS.value} {job_name}")
 
+    def download_from_worker(self, job_name, prev_worker):
+        pass
+
     def status(self):
         status = self.sendRecv(Command.POLL.value)
         return status
@@ -56,25 +70,6 @@ class WorkerClient:
         self.job = None
         return self.sendRecv(Command.RESET.value)
 
-    # def train(self, job):
-    #     self.job = job
-    #     self.job.start_time = time.time()
-    #     return self.send(f"TRAIN {job.job_name} {job.curr_sample}")
-
-    # def train_interrupt(self):
-    #     return self.sendRecv(f"TRAIN_INTERRUPT")
-
-    # def status(self):
-    #     status, job, sample_idx = self.sendRecv("POLL").split()
-    #     if sample_idx != 'None':
-    #         sample_idx = int(sample_idx)
-    #     return status, job, sample_idx
-
-    # def reset(self):
-    #     self.task = None
-    #     self.job = None
-    #     return self.sendRecv(f"RESET")
-
 class Job:
     def __init__(self, job_name="default", epochs=3):
         self.job_name = job_name
@@ -82,80 +77,36 @@ class Job:
         self.curr_epoch = 0
         self.start_time = None
         self.completed = False
+        self.worker = None
+        self.prev_worker = None
+        self.ps = None
 
-class Master:
 
-    def __init__(self, worker_addrs, jobs=[]):
-        self.workers = [WorkerTracker(addr) for addr in worker_addrs]
-        self.jobs = jobs
-        self.jobs_by_name = {job.job_name: job for job in self.jobs}
-        self.num_jobs = len(self.jobs)
+NUM_JOBS = 1
+NUM_EPOCHS = 2
 
-        self.currently_training_jobs = set()
+class Scheduler:
 
-        self.pending_jobs = deque(self.jobs)
-        self.completed_jobs = set()
+    def __init__(self, ps_hosts, worker_hosts):
+        self.parameter_servers = [WorkerClient(f"{ps_host}:8888") for ps_host in ps_hosts]
+        self.workers = [WorkerClient(f"{worker_host}:8888") for worker_host in worker_hosts]
 
-        self.train_interval = 60 # how long to train each job for in seconds before suspending
-
-    def train(self):
-        # Reset all workers
         for worker in self.workers:
             worker.reset()
+        for ps in self.parameter_servers:
+            ps.reset()
 
-        time.sleep(1)
+        self.jobs = [Job(job_name=f"job_{i}", epochs=NUM_EPOCHS) for i in range(NUM_JOBS)]
 
-        start_time = time.time()
+        for i, job in self.jobs:
+            job.ps = self.parameter_servers[i % len(self.parameter_servers)]
 
-        while self.pending_jobs:
+        self.pending_jobs = deque(self.jobs)
+        self.in_progress_jobs = set()
 
-            # completed = []
 
-            for worker_id, worker in enumerate(self.workers):
-
-                status, last_job_name, last_sample = worker.status()
-                # print(status, last_job_name, last_sample)
-                if status == "BUSY":
-                    # TODO: SUSPEND JOB IF DESIRED HERE
-                    if time.time() - worker.job.start_time >= self.train_interval:
-                        print(f"Suspending {worker.job.job_name} on worker {worker_id}.")
-                        worker.train_interrupt()
-                elif status == "STOPPING":
-                    pass
-                elif status == "FREE":
-
-                    # If there is a previous job that we must update.
-                    # if last_job_name != 'None':
-                    if worker.job != None:
-                        # last_job = self.jobs_by_name[last_job_name]
-                        # last_job.set_curr_sample(last_sample + 1)
-                        # print(f"Updating status of {last_job.job_name} to sample {last_sample+1}.")
-                        # self.currently_training_jobs.remove(last_job)
-                        # if last_job.completed:
-                        #     self.pending_jobs.remove(last_job)
-                        #     self.completed_jobs.add(last_job)
-
-                        worker.job.set_curr_sample(last_sample + 1)
-                        print(f"Updating status of {worker.job.job_name} to sample {last_sample+1}.")
-                        self.currently_training_jobs.remove(worker.job)
-                        if worker.job.completed:
-                            self.pending_jobs.remove(worker.job)
-                            self.completed_jobs.add(worker.job)
-                        worker.job = None
-
-                    if self.pending_jobs:
-                        job = self.pending_jobs.popleft()
-                        self.pending_jobs.append(job)
-
-                        if job not in self.currently_training_jobs:
-                            self.currently_training_jobs.add(job)
-                            worker.train(job)
-                            print(f"Running ({job.job_name}, epoch={job.curr_epoch}, sample={job.curr_sample}) on worker {worker_id}.")
-
-            time.sleep(1)
-
-        end_time = time.time()
-        print(f"Finished training in {end_time - start_time} seconds.")
+    def train(self):
+        pass
 
 if __name__ == "__main__":
 
@@ -176,7 +127,7 @@ if __name__ == "__main__":
     print(ps0.status())
     print(worker0.status())
 
-    # ps0.start_ps('test', 2222, f'{worker_host}:2222')
-    # worker0.train('test', f'{ps_host}:2222', f'{worker_host}:2222')
+    ps0.start_ps('test', 2222, f'{worker_host}:2222')
+    worker0.train('test', f'{ps_host}:2222', f'{worker_host}:2222')
 
     # worker0.validate('test', f'{ps_host}:2222', f'{worker_host}:2222')

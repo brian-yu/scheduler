@@ -7,6 +7,7 @@ import signal
 import subprocess
 from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread, Lock
+from ftplib import FTP
 
 from daemon import Daemon
 from constants import Command, Status
@@ -54,6 +55,10 @@ class WorkerDaemon(Daemon):
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
                 self.log(f"Validating job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
+
+                # Download 'latest_model_{jobName}.ckpt' .index and .data files.
+                self.download_latest_model(job, ps_hosts)
+
                 os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job} --validate")
                 with self.worker_status_lock:
                     self.worker_status = Status.FREE
@@ -67,7 +72,11 @@ class WorkerDaemon(Daemon):
                 job, ps_hosts, worker_hosts = tokens[1:4]
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
-                self.log(f"Validating job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
+                self.log(f"Testing job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
+
+                # Download 'latest_model_{jobName}.ckpt' .index and .data files.
+                self.download_latest_model(job, ps_hosts)
+
                 os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job} --test")
                 with self.worker_status_lock:
                     self.worker_status = Status.FREE
@@ -130,6 +139,16 @@ class WorkerDaemon(Daemon):
                     shutil.rmtree(file_path)
             except Exception as e:
                 print(e)
+
+    def download_latest_model(self, job, ps_hosts):
+        # Download 'latest_model_{jobName}.ckpt' .index and .data files.
+        fnames = [f"latest_model_{job}.ckpt.index", f"latest_model_{job}.ckpt.data-00000-of-00001"]
+        ps_host = ps_hosts.split(":")[0]
+        ftp = FTP(ps_host)
+        ftp.cwd(job)
+        for fname in fnames:
+            with open(f'checkpoints/test/{fname}', 'wb') as fp:
+                ftp.retrbinary(f'RETR {fname}', fp.write)
 
     def cleanup(self, signal, frame):
         self.log(f"Killing {len(self.job_ps_process)} PS processes.")
