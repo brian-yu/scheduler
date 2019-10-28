@@ -1,0 +1,28 @@
+version: '3'
+services:
+  daemon:
+    build: .
+    container_name: daemon
+    volumes:
+      - /home/ubuntu/scheduler:/root
+    network_mode: "host"
+    command: python3 -u worker_daemon.py --port=8888
+    environment:
+      PUBLIC_IP: ${PUBLIC_IP}
+
+  ftp:
+    image: stilliard/pure-ftpd:hardened
+    container_name: ftp
+    ports:
+      - "21:21"
+      - "30000-30099:30000-30099"
+    volumes:
+      - "/home/ubuntu/scheduler/checkpoints/:/home/checkpoints/"
+    environment:
+      PUBLICHOST: ${PUBLIC_IP}
+      FTP_USER_NAME: checkpoints
+      FTP_USER_PASS: test
+      FTP_USER_HOME: /home/checkpoints
+      FTP_MAX_CLIENTS: 50
+      FTP_PASSIVE_PORTS: "30000:30099"
+    restart: always
