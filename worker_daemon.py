@@ -39,21 +39,22 @@ class WorkerDaemon(Daemon):
         if command == Command.TRAIN:
 
             try:
-                job, ps_hosts, worker_hosts = tokens[1:4]
+                job, ps_host, worker_host, prev_worker_host = tokens[1:5]
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
-                self.log(f"Training job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
+                self.log(f"Training job={job}, ps_hosts={ps_host}, worker_hosts={worker_host}")
                 '''
                 For timing, maybe have task2.py log times in ./log_folder/times.txt.
                 Then the worker daemon will read the times and send salient timing information.
                 '''
-                self.download_train_files(job, ps_hosts)
-                os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job} --train")
-                with self.worker_status_lock:
-                    self.worker_status = Status.FREE
-                self.log("Finished.")
+                self.download_train_files(job, ps_host, prev_worker_host)
+                os.system(f"python3 task2.py --ps_hosts={ps_host} --worker_hosts={worker_host} --job_name=worker --task_index=0 --job={job} --train")
+                self.log("Training finished.")
             except Exception as err:
                 self.log(f"Error: {err}")
+            finally:
+                with self.worker_status_lock:
+                    self.worker_status = Status.FREE
 
         elif command == Command.VALIDATE:
 
@@ -67,11 +68,12 @@ class WorkerDaemon(Daemon):
                 self.download_latest_model(job, ps_hosts)
 
                 os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job} --validate")
-                with self.worker_status_lock:
-                    self.worker_status = Status.FREE
-                self.log("Finished.")
+                self.log("Validation finished.")
             except Exception as err:
                 self.log(f"Error: {err}")
+            finally:
+                with self.worker_status_lock:
+                    self.worker_status = Status.FREE
 
         elif command == Command.TEST:
 
@@ -85,11 +87,12 @@ class WorkerDaemon(Daemon):
                 self.download_latest_model(job, ps_hosts)
 
                 os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job} --test")
-                with self.worker_status_lock:
-                    self.worker_status = Status.FREE
-                self.log("Finished.")
+                self.log("Testing finished.")
             except Exception as err:
                 self.log(f"Error: {err}")
+            finally:
+                with self.worker_status_lock:
+                    self.worker_status = Status.FREE
 
         elif command == Command.START_PS:
             try:
@@ -149,15 +152,32 @@ class WorkerDaemon(Daemon):
 
     # TODO: Download `checkpoint` and `.meta` files from prev worker.
     # Reads checkpoint file and downloads appropriate .index file from PS.
-    def download_train_files(self, job, ps_hosts):
-        # Download checkpoint and .meta files first, so that we can read them 
-        # to determine which .index file to download from.
+    def download_train_files(self, job, ps_host, prev_worker_host):
+
+        # If this is the first worker running a job, we don't need to download
+        # any files.
+        if prev_worker_host == "None":
+            return
+
+        ps = self.hostname(ps_host)
+        prev_worker = self.hostname(prev_worker_host)
+
+        # Need to Download checkpoint and .meta files first, so that we can read them 
+        # to determine which .index file to download from the PS.
+
+        fnames = ['checkpoint']
+        self.download_train_files(job, prev_worker, fnames)
+
+        # Download .index file from PS
         with open(f"checkpoints/{job}/checkpoint") as f:
             full_path = f.readline().rstrip("\n").rstrip("\"").split(":")[1]
             ckpt = full_path.split("/")[-1]
             index = f"{ckpt}.index"
-            ps_host = ps_hosts.split(":")[0]
-            self.download_files(job, ps_host, [index])
+            meta = f"{ckpt}.meta"
+            # Download .index file from ps
+            self.download_files(job, ps, [index])
+            # Download .meta file from prev_worker
+            self.download_files(job, prev_worker, [meta])
 
     def download_latest_model(self, job, ps_hosts):
         # Download 'latest_model_{jobName}.ckpt' .index and .data files.
@@ -165,12 +185,14 @@ class WorkerDaemon(Daemon):
         ps_host = ps_hosts.split(":")[0]
         self.download_files(job, ps_host, fnames)
 
-    def download_files(self, job, ps_host, fnames):
-        self.log(f"Downloading {fnames} from {ps_host}")
-        ftp = FTP(ps_host, user="checkpoints", passwd="test")
+    def download_files(self, job, host, fnames):
+        self.log(f"Downloading {fnames} from {host}")
+        ftp = FTP(host, user="checkpoints", passwd="test")
         ftp.cwd(job)
         for fname in fnames:
-            with open(f'checkpoints/test/{fname}', 'wb') as fp:
+            path = f'checkpoints/{job}/{fname}'
+            self.create_dir(path)
+            with open(path, 'wb') as fp:
                 ftp.retrbinary(f'RETR {fname}', fp.write)
 
     def cleanup(self, signal, frame):
@@ -180,6 +202,18 @@ class WorkerDaemon(Daemon):
         self.sock.close()
         self.log("Exiting.")
         sys.exit(0)
+
+    def hostname(self, addr):
+        return addr.split(":")[0]
+
+    def create_dir(self, path):
+        if not os.path.exists(os.path.dirname(path)):
+            try:
+                os.makedirs(os.path.dirname(path))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+
 
 if __name__ == "__main__":
 
