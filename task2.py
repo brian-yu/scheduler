@@ -324,8 +324,8 @@ def main(_):
 
                 print('training')
 
-                # for j in range(0, steps - remaining, step_size):
-                for j in range(0, 200, step_size):
+                for j in range(0, steps - remaining, step_size):
+                # for j in range(0, 200, step_size):
                     #Feeding step_size-amount data with 0.5 keeping probabilities on DROPOUT LAYERS
                     _, c = mon_sess.run(
                         [train_op, cross_entropy],
