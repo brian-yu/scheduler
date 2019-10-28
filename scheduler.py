@@ -120,8 +120,8 @@ if __name__ == "__main__":
     worker0 = WorkerClient(f'{worker_host}:8888')
 
 
-    print(ps0.reset())
-    print(worker0.reset())
+    # print(ps0.reset())
+    # print(worker0.reset())
 
 
     print(ps0.status())
