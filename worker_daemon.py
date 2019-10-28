@@ -30,7 +30,13 @@ class WorkerDaemon(Daemon):
 
         command_str = tokens[0]
 
-        if Command(command_str) == Command.TRAIN:
+        try:
+            command = Command(command_str)
+        except Exception as err:
+            self.log(f"Error: {err}")
+            return "Oops"
+
+        if command == Command.TRAIN:
 
             try:
                 job, ps_hosts, worker_hosts = tokens[1:4]
@@ -49,7 +55,7 @@ class WorkerDaemon(Daemon):
             except Exception as err:
                 self.log(f"Error: {err}")
 
-        elif Command(command_str) == Command.VALIDATE:
+        elif command == Command.VALIDATE:
 
             try:
                 job, ps_hosts, worker_hosts = tokens[1:4]
@@ -67,7 +73,7 @@ class WorkerDaemon(Daemon):
             except Exception as err:
                 self.log(f"Error: {err}")
 
-        elif Command(command_str) == Command.TEST:
+        elif command == Command.TEST:
 
             try:
                 job, ps_hosts, worker_hosts = tokens[1:4]
@@ -85,7 +91,7 @@ class WorkerDaemon(Daemon):
             except Exception as err:
                 self.log(f"Error: {err}")
 
-        elif Command(command_str) == Command.START_PS:
+        elif command == Command.START_PS:
             try:
                 job, ps_hosts, worker_hosts = tokens[1:4]
                 self.log(f"Starting PS for job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
@@ -97,7 +103,7 @@ class WorkerDaemon(Daemon):
             except Exception as err:
                 self.log(f"Error: {err}")
 
-        elif Command(command_str) == Command.STOP_PS:
+        elif command == Command.STOP_PS:
             try:
                 job = tokens[1]
 
@@ -108,7 +114,7 @@ class WorkerDaemon(Daemon):
             except Exception as err:
                 self.log(f"Error: {err}")
 
-        elif Command(command_str) == Command.POLL:
+        elif command == Command.POLL:
             try:
                 with self.worker_status_lock:
                     status = self.worker_status
@@ -117,7 +123,7 @@ class WorkerDaemon(Daemon):
             except Exception as err:
                 self.log(f"Error: {err}")
 
-        elif Command(command_str) == Command.RESET:
+        elif command == Command.RESET:
             try:
                 self.delete_directory_contents('checkpoints')
                 self.delete_directory_contents('log_folder')
@@ -142,7 +148,10 @@ class WorkerDaemon(Daemon):
                 print(e)
 
     # TODO: Download `checkpoint` and `.meta` files from prev worker.
+    # Reads checkpoint file and downloads appropriate .index file from PS.
     def download_train_files(self, job, ps_hosts):
+        # Download checkpoint and .meta files first, so that we can read them 
+        # to determine which .index file to download from.
         with open(f"checkpoints/{job}/checkpoint") as f:
             full_path = f.readline().rstrip("\n").rstrip("\"").split(":")[1]
             ckpt = full_path.split("/")[-1]

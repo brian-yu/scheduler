@@ -7,7 +7,7 @@ from collections import deque
 
 from constants import Command, Status
 
-
+# THESE MUST BE IPV4 ADDRESSES IN ORDER FOR FTP SERVER TO WORK.
 PS_HOSTS = [
     '52.90.16.197',
 ]
@@ -60,9 +60,9 @@ class WorkerClient:
     def download_from_worker(self, job_name, prev_worker):
         pass
 
-    def status(self):
-        status = self.sendRecv(Command.POLL.value)
-        return status
+    def poll(self):
+        status_str = self.sendRecv(Command.POLL.value)
+        return Status(status_str)
 
     def reset(self):
         self.job = None
@@ -104,7 +104,22 @@ class Scheduler:
 
 
     def train(self):
-        pass
+        while self.pending_jobs:
+            for worker_id, worker in enumerate(self.workers):
+                status = worker.poll()
+
+
+                if status == Status.BUSY:
+                    # Do something? Maybe do nothing?
+                    pass
+
+
+                elif status == Status.FREE:
+                    # Assign job to this worker.
+                    pass
+
+
+            time.sleep(1)
 
 if __name__ == "__main__":
 
@@ -122,10 +137,10 @@ if __name__ == "__main__":
     # print(worker0.reset())
 
 
-    print(ps0.status())
-    print(worker0.status())
+    print(ps0.poll())
+    print(worker0.poll())
 
     # ps0.start_ps('test', 2222, f'{worker_host}:2222')
-    worker0.train('test', f'{ps_host}:2222', f'{worker_host}:2222')
+    # worker0.train('test', f'{ps_host}:2222', f'{worker_host}:2222')
 
-    # worker0.validate('test', f'{ps_host}:2222', f'{worker_host}:2222')
+    worker0.validate('test', f'{ps_host}:2222', f'{worker_host}:2222')

@@ -13,7 +13,7 @@ services:
     container_name: ftp
     ports:
       - "21:21"
-      - "30000-30009:30000-30009"
+      - "30000-30099:30000-30099"
     volumes:
       - "/home/ubuntu/scheduler/checkpoints/:/home/checkpoints/"
     environment:
@@ -21,4 +21,6 @@ services:
       FTP_USER_NAME: checkpoints
       FTP_USER_PASS: test
       FTP_USER_HOME: /home/checkpoints
+      FTP_MAX_CLIENTS: 50
+      FTP_PASSIVE_PORTS: "30000:30099"
     restart: always
