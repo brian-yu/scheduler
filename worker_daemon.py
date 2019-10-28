@@ -208,7 +208,7 @@ class WorkerDaemon(Daemon):
 
     def terminate_parameter_servers(self):
         self.log(f"Killing {len(self.job_ps_process)} PS processes.")
-        for job, ps_proc in self.job_ps_process:
+        for job, ps_proc in self.job_ps_process.values():
             self.log(f"Killing PS for {job}")
             ps_proc.terminate()
         self.job_ps_process = {}
