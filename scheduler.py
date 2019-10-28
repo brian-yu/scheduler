@@ -127,7 +127,7 @@ if __name__ == "__main__":
     print(ps0.status())
     print(worker0.status())
 
-    ps0.start_ps('test', 2222, f'{worker_host}:2222')
-    worker0.train('test', f'{ps_host}:2222', f'{worker_host}:2222')
+    # ps0.start_ps('test', 2222, f'{worker_host}:2222')
+    # worker0.train('test', f'{ps_host}:2222', f'{worker_host}:2222')
 
-    # worker0.validate('test', f'{ps_host}:2222', f'{worker_host}:2222')
+    worker0.validate('test', f'{ps_host}:2222', f'{worker_host}:2222')

@@ -144,7 +144,7 @@ class WorkerDaemon(Daemon):
         # Download 'latest_model_{jobName}.ckpt' .index and .data files.
         fnames = [f"latest_model_{job}.ckpt.index", f"latest_model_{job}.ckpt.data-00000-of-00001"]
         ps_host = ps_hosts.split(":")[0]
-        ftp = FTP(ps_host)
+        ftp = FTP(ps_host, user="checkpoints", passwd="test")
         ftp.cwd(job)
         for fname in fnames:
             with open(f'checkpoints/test/{fname}', 'wb') as fp:
