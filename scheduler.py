@@ -146,13 +146,16 @@ class Job:
         if self.curr_epoch >= self.epochs:
             self.completed = True
 
+    def __repr__(self):
+        return f"({self.job_name}, curr_epoch={self.curr_epoch}, total_epochs={self.epochs})"
+
 
 NUM_JOBS = 1
 NUM_EPOCHS = 2
 
 class Scheduler:
 
-    def __init__(self, ps_hosts, worker_hosts):
+    def __init__(self, ps_hosts, worker_hosts, jobs=None):
         self.parameter_servers = [
             ParameterServerClient(f"{ps_host}:8888") for ps_host in ps_hosts]
         self.workers = [
@@ -161,13 +164,15 @@ class Scheduler:
         # Reset all workers and parameter servers.
         self.reset_nodes()
 
+        self.jobs = jobs
+        if not jobs:
         # Create NUM_JOBS jobs each with NUM_EPOCHS epochs
-        self.jobs = [Job(job_name=f"job_{i}", epochs=NUM_EPOCHS) for i in range(NUM_JOBS)]
+            self.jobs = [Job(job_name=f"job_{i}", epochs=NUM_EPOCHS) for i in range(NUM_JOBS)]
 
         # self.job_val_accs = defaultdict(list)
 
         # Assign parameter servers to jobs. Important! These should never change.
-        for i, job in self.jobs:
+        for i, job in enumerate(self.jobs):
             job.ps = self.parameter_servers[i % len(self.parameter_servers)]
 
         self.pending_jobs = deque(self.jobs)
@@ -188,7 +193,7 @@ class Scheduler:
         while self.pending_jobs:
             for worker_id, worker in enumerate(self.workers):
                 status = worker.poll()
-
+                print(f"Worker_{worker_id} is {status}")
 
                 if status == Status.BUSY:
                     # Do something? Maybe do nothing?
@@ -198,15 +203,19 @@ class Scheduler:
                 elif status == Status.FREE:
                     ## Cleanup current job on the worker if assigned.
                     if worker.job:
+                        
                         prev_job = worker.job
+
+                        print(f"Terminating {prev_job} on Worker_{worker_id}")
                         
                         # Stop PS for prev job
                         prev_job.ps.stop_ps(prev_job)
-
                         self.currently_training_jobs.remove(prev_job)
 
                         # Increment epoch
                         prev_job.increment_epoch()
+
+                        print("Terminated job: {prev_job}")
 
                         if prev_job.completed:
                             self.pending_jobs.remove(prev_job)
@@ -220,10 +229,10 @@ class Scheduler:
                         self.pending_jobs.append(job)
 
                         if job not in self.currently_training_jobs:
+                            print(f"Assigning {job} to Worker_{worker_id}")
                             self.currently_training_jobs.add(job)
                             job.ps.start_ps(job, worker)
                             worker.train(job)
-                            print(f"Running ({job.job_name}, epoch={job.curr_epoch}, sample={job.curr_sample}) on worker {worker_id}.")
 
             time.sleep(1)
 
@@ -253,10 +262,15 @@ if __name__ == "__main__":
     # print(worker0.reset())
 
 
-    print(ps0.poll())
-    print(worker0.poll())
+    # print(ps0.poll())
+    # print(worker0.poll())
 
-    # ps0.start_ps('test', 2222, f'{worker_host}:2222')
-    # worker0.train('test', f'{ps_host}:2222', f'{worker_host}:2222')
+    # # ps0.start_ps('test', 2222, f'{worker_host}:2222')
+    # # worker0.train('test', f'{ps_host}:2222', f'{worker_host}:2222')
 
-    worker0.validate('test', f'{ps_host}:2222', f'{worker_host}:2222')
+    # worker0.validate('test', f'{ps_host}:2222', f'{worker_host}:2222')
+
+
+    scheduler = Scheduler(PS_HOSTS, WORKER_HOSTS)
+
+    scheduler.train()

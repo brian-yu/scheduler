@@ -113,6 +113,7 @@ class WorkerDaemon(Daemon):
                 self.log(f"Killing PS for job={job}")
                 job_proc = self.job_ps_process[job]
                 job_proc.terminate()
+                self.job_ps_process.pop(job)
 
             except Exception as err:
                 self.log(f"Error: {err}")
@@ -128,6 +129,7 @@ class WorkerDaemon(Daemon):
 
         elif command == Command.RESET:
             try:
+                self.terminate_parameter_servers()
                 self.delete_directory_contents('checkpoints')
                 self.delete_directory_contents('log_folder')
                 self.delete_directory_contents('loss_folder')
@@ -152,6 +154,7 @@ class WorkerDaemon(Daemon):
 
     # TODO: Download `checkpoint` and `.meta` files from prev worker.
     # Reads checkpoint file and downloads appropriate .index file from PS.
+    # TODO: don't download checkpoint and .meta if prev_worker is current worker?
     def download_train_files(self, job, ps_host, prev_worker_host):
 
         # If this is the first worker running a job, we don't need to download
@@ -195,10 +198,16 @@ class WorkerDaemon(Daemon):
             with open(path, 'wb') as fp:
                 ftp.retrbinary(f'RETR {fname}', fp.write)
 
-    def cleanup(self, signal, frame):
+
+    def terminate_parameter_servers(self):
         self.log(f"Killing {len(self.job_ps_process)} PS processes.")
-        for proc in self.job_ps_process.values():
-            proc.terminate()
+        for job, ps_proc in self.job_ps_process:
+            self.log(f"Killing PS for {job}")
+            ps_proc.terminate()
+        self.job_ps_process = {}
+
+    def cleanup(self, signal, frame):
+        self.terminate_parameter_servers()
         self.sock.close()
         self.log("Exiting.")
         sys.exit(0)
