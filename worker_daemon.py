@@ -109,10 +109,10 @@ class WorkerDaemon(Daemon):
 
         elif Command(command_str) == Command.RESET:
             try:
-                self.delete_directory_contents('./checkpoints')
-                self.delete_directory_contents('./log_folder')
-                self.delete_directory_contents('./loss_folder')
-                self.delete_directory_contents('./accuracy_folder')
+                self.delete_directory_contents('checkpoints')
+                self.delete_directory_contents('log_folder')
+                self.delete_directory_contents('loss_folder')
+                self.delete_directory_contents('accuracy_folder')
             except Exception as err:
                 self.log(f"Error: {err}")
             
@@ -122,7 +122,7 @@ class WorkerDaemon(Daemon):
         path = os.path.join(os.getcwd(), rel_path)
         self.log(f"Deleting {path}.")
         for file in os.listdir(path):
-            file_path = os.path.join(folder, file)
+            file_path = os.path.join(path, file)
             try:
                 if os.path.isfile(file_path):
                     os.unlink(file_path)
