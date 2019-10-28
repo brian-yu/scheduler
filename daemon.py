@@ -49,7 +49,8 @@ class Daemon:
             #     return False
 
     def same_node(self, host):
-        return host == self.host
+        ip = os.environ['PUBLIC_IP']
+        return host == ip
 
     def listen(self, verbose=False):
         self.log(f"Listening on {self.host}:{self.port}")

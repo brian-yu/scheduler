@@ -238,7 +238,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", default=8888, type=int, help="Port to listen for commands on.")
     args = parser.parse_args()
 
-    worker_daemon = WorkerDaemon(os.environ['PUBLIC_IP'], args.port)
+    worker_daemon = WorkerDaemon('', args.port)
 
     signal.signal(signal.SIGINT, worker_daemon.cleanup)
 
