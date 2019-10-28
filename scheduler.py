@@ -252,11 +252,17 @@ class Scheduler:
         end_time = time.time()
         print(f"Finished training in {end_time - start_time} seconds.")
 
+    def validate(self):
+        self.val_test()
+
     def test(self):
+        self.val_test(mode="testing")
+
+    def val_test(self, mode="validation"):
         job_q = deque(self.jobs)
         currently_testing = set()
 
-        print("Testing models.")
+        print(f"Beginning {mode}.")
         start_time = time.time()
 
         while job_q:
@@ -294,15 +300,18 @@ class Scheduler:
                         job_q.append(job)
 
                         if job not in currently_testing:
-                            print(f"Testing {job} on Worker_{worker_id}")
+                            print(f"Begin {mode} of {job} on Worker_{worker_id}")
                             job.assign_to(worker)
                             currently_testing.add(job)
                             job.ps.start_ps(job, worker)
-                            worker.test(job)
+                            if mode == "testing":
+                                worker.test(job)
+                            else:
+                                worker.validate(job)
 
             time.sleep(1)
         end_time = time.time()
-        print(f"Finished testing in {end_time - start_time} seconds.")
+        print(f"Finished {mode} in {end_time - start_time} seconds.")
 
 
     # Reset all workers and parameter servers.
@@ -336,8 +345,8 @@ if __name__ == "__main__":
 
     # worker0.validate('test', f'{ps_host}:2222', f'{worker_host}:2222')
 
-
     scheduler = Scheduler(PS_HOSTS, WORKER_HOSTS)
 
     scheduler.train()
-    scheduler.test()
+    scheduler.validate()
+    # scheduler.test()
