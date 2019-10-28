@@ -8,6 +8,8 @@ import subprocess
 from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread, Lock
 from ftplib import FTP
+import re
+import glob
 
 from daemon import Daemon
 from constants import Command, Status
@@ -98,6 +100,7 @@ class WorkerDaemon(Daemon):
             try:
                 job, ps_hosts, worker_hosts = tokens[1:4]
                 self.log(f"Starting PS for job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
+                self.delete_old_checkpoints(job)
                 proc = subprocess.Popen(
                     ['python3', 'task2.py', f"--ps_hosts={ps_hosts}", f"--worker_hosts={worker_hosts}",
                      "--job_name=ps", "--task_index=0", f"--job={job}"])
@@ -208,7 +211,7 @@ class WorkerDaemon(Daemon):
 
     def terminate_parameter_servers(self):
         self.log(f"Killing {len(self.job_ps_process)} PS processes.")
-        for job, ps_proc in self.job_ps_process.values():
+        for job, ps_proc in self.job_ps_process.items():
             self.log(f"Killing PS for {job}")
             ps_proc.terminate()
         self.job_ps_process = {}
@@ -231,8 +234,20 @@ class WorkerDaemon(Daemon):
                 if exc.errno != errno.EEXIST:
                     raise
 
-    def delete_old_checkpoints(self):
-        return
+    def delete_old_checkpoints(self, job):
+        # Get all model.ckpt filenames
+        ckpt_files = glob.glob(f'checkpoints/{job}/model.ckpt-*')
+        self.log(f"ckpt files for {job}: {ckpt_files}")
+        # Find latest version number
+        ckpt_versions = sorted(
+            [int(re.search('ckpt-(\d+).', file).group(1)) for file in ckpt_files])
+        keep = ckpt[-1]
+        # Delete all ckpt files that are not the latest version
+        for file in ckpt_files:
+            if int(re.search('ckpt-(\d+).', file).group(1)) != keep:
+                if os.path.isfile(file):
+                    self.log(f"Deleting {file}")
+                    os.remove(file)
 
 
 if __name__ == "__main__":
