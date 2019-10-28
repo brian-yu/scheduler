@@ -231,6 +231,9 @@ class WorkerDaemon(Daemon):
                 if exc.errno != errno.EEXIST:
                     raise
 
+    def delete_old_checkpoints(self):
+        return
+
 
 if __name__ == "__main__":
 
