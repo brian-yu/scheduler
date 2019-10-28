@@ -311,6 +311,9 @@ def main(_):
         saver = tf.train.Saver()
 
         # config = tf.ConfigProto(device_count={'GPU': 0})
+        config = tf.ConfigProto(allow_soft_placement=True)
+        config.gpu_options.allow_growth = True
+        config.gpu_options.allocator_type = 'BFC'
         #num_epoch = 1
 
         #steps = 1000
@@ -322,7 +325,8 @@ def main(_):
                     master=server.target,
                     is_chief=(FLAGS.task_index == 0),
                     checkpoint_dir=train_folder,
-                    hooks=hooks) as mon_sess:
+                    hooks=hooks,
+                    config=config) as mon_sess:
 
                 print('training')
 
