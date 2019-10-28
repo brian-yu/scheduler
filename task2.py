@@ -358,8 +358,9 @@ def main(_):
                 #     train_folder + "/latest_model_" + j_name + ".ckpt.meta",
                 #     clear_devices=True)
                 # saver.restore(sess, ckpt)
-                saver.restore(sess,
-                              train_folder + "/latest_model_" + j_name + ".ckpt")
+                ckpt = train_folder + "/latest_model_" + j_name + ".ckpt"
+                print(f"Restoring model from {ckpt}")
+                saver.restore(sess, ckpt)
 
                 cv_auc_list = []
                 cv_acc_list = []
@@ -401,8 +402,10 @@ def main(_):
                 with open('./log_folder/' + j_name + '_log', 'a') as f:
                     f.write('\n\ntest the model accuracy after training')
 
-                saver.restore(sess,
-                              train_folder + "/latest_model_" + j_name + ".ckpt")
+                ckpt = train_folder + "/latest_model_" + j_name + ".ckpt"
+                print(f"Restoring model from {ckpt}")
+                saver.restore(sess, ckpt)
+
                 test_auc_list = []
                 test_acc_list = []
                 test_loss_list = []

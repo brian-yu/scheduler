@@ -3,6 +3,7 @@ from threading import Thread
 import sys
 import time
 import argparse
+import random
 from collections import deque, defaultdict
 
 from constants import Command, Status
@@ -82,6 +83,15 @@ class WorkerClient(Client):
         print(command)
         return self.send(command)
 
+    def test(self, job):
+        if self.job:
+            raise Exception("Currently assigned to a job.")
+        self.job = job
+        ps_host = self.job.ps.tf_addr(self.job)
+        command = f"{Command.TEST.value} {job.job_name} {ps_host} {self.tf_addr()}"
+        print(command)
+        return self.send(command)
+
     def tf_addr(self):
         return f"{self.host}:2222"
 
@@ -150,8 +160,9 @@ class Job:
         return f"({self.job_name}, curr_epoch={self.curr_epoch}, total_epochs={self.epochs})"
 
 
-NUM_JOBS = 1
-NUM_EPOCHS = 2
+NUM_JOBS = 3
+NUM_EPOCHS_LO = 1 # will be 25
+NUM_EPOCHS_HI = 2 # will be 30
 
 class Scheduler:
 
@@ -167,7 +178,9 @@ class Scheduler:
         self.jobs = jobs
         if not jobs:
         # Create NUM_JOBS jobs each with NUM_EPOCHS epochs
-            self.jobs = [Job(job_name=f"job_{i}", epochs=NUM_EPOCHS) for i in range(NUM_JOBS)]
+            get_num_epochs = lambda: random.randint(NUM_EPOCHS_LO, NUM_EPOCHS_HI)
+            self.jobs = [
+                Job(job_name=f"job_{i}", epochs=get_num_epochs()) for i in range(NUM_JOBS)]
 
         # self.job_val_accs = defaultdict(list)
 
@@ -199,7 +212,6 @@ class Scheduler:
                     # Do something? Maybe do nothing?
                     pass
 
-
                 elif status == Status.FREE:
                     ## Cleanup current job on the worker if assigned.
                     if worker.job:
@@ -215,7 +227,7 @@ class Scheduler:
                         # Increment epoch
                         prev_job.increment_epoch()
 
-                        print("Terminated job: {prev_job}")
+                        print(f"Terminated job: {prev_job}")
 
                         if prev_job.completed:
                             self.pending_jobs.remove(prev_job)
@@ -240,6 +252,59 @@ class Scheduler:
         end_time = time.time()
         print(f"Finished training in {end_time - start_time} seconds.")
 
+    def test(self):
+        job_q = deque(self.jobs)
+        currently_testing = set()
+
+        print("Testing models.")
+        start_time = time.time()
+
+        while job_q:
+            for worker_id, worker in enumerate(self.workers):
+                status = worker.poll()
+                print(f"Worker_{worker_id} is {status}")
+
+                if status == Status.BUSY:
+                    # Do something? Maybe do nothing?
+                    pass
+
+                elif status == Status.FREE:
+                    ## Cleanup current job on the worker if assigned.
+                    if worker.job:
+                        
+                        prev_job = worker.job
+
+                        print(f"Terminating {prev_job} on Worker_{worker_id}")
+                        
+                        # Stop PS for prev job
+                        prev_job.ps.stop_ps(prev_job)
+                        currently_testing.remove(prev_job)
+
+                        print(f"Terminated job: {prev_job}")
+
+                        if prev_job.completed:
+                            job_q.remove(prev_job)
+
+                        worker.job = None
+
+
+                    # Assign a job to this worker.
+                    if job_q:
+                        job = job_q.popleft()
+                        job_q.append(job)
+
+                        if job not in currently_testing:
+                            print(f"Testing {job} on Worker_{worker_id}")
+                            job.assign_to(worker)
+                            currently_testing.add(job)
+                            job.ps.start_ps(job, worker)
+                            worker.test(job)
+
+            time.sleep(1)
+        end_time = time.time()
+        print(f"Finished testing in {end_time - start_time} seconds.")
+
+
     # Reset all workers and parameter servers.
     def reset_nodes(self):
         for worker in self.workers:
@@ -252,11 +317,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Master.')
     args = parser.parse_args()
 
-    ps_host = '52.90.16.197'
-    worker_host = '54.172.145.68'
+    # ps_host = '52.90.16.197'
+    # worker_host = '54.172.145.68'
 
-    ps0 = ParameterServerClient(f'{ps_host}:8888')
-    worker0 = WorkerClient(f'{worker_host}:8888')
+    # ps0 = ParameterServerClient(f'{ps_host}:8888')
+    # worker0 = WorkerClient(f'{worker_host}:8888')
 
 
     # print(ps0.reset())
@@ -275,3 +340,4 @@ if __name__ == "__main__":
     scheduler = Scheduler(PS_HOSTS, WORKER_HOSTS)
 
     scheduler.train()
+    scheduler.test()
