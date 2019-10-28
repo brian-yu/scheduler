@@ -41,6 +41,7 @@ class WorkerDaemon(Daemon):
                 For timing, maybe have task2.py log times in ./log_folder/times.txt.
                 Then the worker daemon will read the times and send salient timing information.
                 '''
+                self.download_train_files(job, ps_hosts)
                 os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job} --train")
                 with self.worker_status_lock:
                     self.worker_status = Status.FREE
