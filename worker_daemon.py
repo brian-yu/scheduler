@@ -167,9 +167,9 @@ class WorkerDaemon(Daemon):
 
         # Need to Download checkpoint and .meta files first, so that we can read them 
         # to determine which .index file to download from the PS.
-
-        fnames = ['checkpoint']
-        self.download_files(job, prev_worker, fnames)
+        if prev_worker != self.host:
+            fnames = ['checkpoint']
+            self.download_files(job, prev_worker, fnames)
 
         # Download .index file from PS
         with open(f"checkpoints/{job}/checkpoint") as f:
@@ -182,7 +182,8 @@ class WorkerDaemon(Daemon):
             # Download .index file from ps
             self.download_files(job, ps, [index])
             # Download .meta file from prev_worker
-            self.download_files(job, prev_worker, [meta])
+            if prev_worker != self.host:
+                self.download_files(job, prev_worker, [meta])
 
     def download_latest_model(self, job, ps_hosts):
         # Download 'latest_model_{jobName}.ckpt' .index and .data files.
@@ -194,11 +195,14 @@ class WorkerDaemon(Daemon):
         self.log(f"Downloading {fnames} from {host}")
         ftp = FTP(host, user="checkpoints", passwd="test")
         ftp.cwd(job)
+        with self.print_lock:
+            ftp.dir()
         for fname in fnames:
             path = f'checkpoints/{job}/{fname}'
             self.create_dir(path)
             with open(path, 'wb') as fp:
                 ftp.retrbinary(f'RETR {fname}', fp.write)
+        self.log(f"Downloaded {fnames} from {host}.")
 
 
     def terminate_parameter_servers(self):
