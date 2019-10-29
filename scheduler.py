@@ -20,7 +20,7 @@ WORKER_HOSTS = [
     '18.234.228.46',
 ]
 
-PS_MAX_JOBS = 8
+PS_MAX_JOBS = 5
 
 class Client:
     def __init__(self, address_str):
@@ -163,9 +163,9 @@ class Job:
         return f"({self.job_name}, curr_epoch={self.curr_epoch}, total_epochs={self.epochs})"
 
 
-NUM_JOBS = 2
-NUM_EPOCHS_LO = 2 # will be 25
-NUM_EPOCHS_HI = 2 # will be 30
+NUM_JOBS = 6
+NUM_EPOCHS_LO = 5 # will be 25
+NUM_EPOCHS_HI = 8 # will be 30
 
 class Scheduler:
 
