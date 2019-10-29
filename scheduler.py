@@ -16,7 +16,7 @@ PS_HOSTS = [
 WORKER_HOSTS = [
     '54.172.145.68',
     '3.91.26.160',
-    
+
 ]
 
 PS_MAX_JOBS = 8
@@ -163,8 +163,8 @@ class Job:
 
 
 NUM_JOBS = 2
-NUM_EPOCHS_LO = 25 # will be 25
-NUM_EPOCHS_HI = 30 # will be 30
+NUM_EPOCHS_LO = 2 # will be 25
+NUM_EPOCHS_HI = 2 # will be 30
 
 class Scheduler:
 
