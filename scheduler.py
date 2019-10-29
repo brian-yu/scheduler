@@ -209,13 +209,14 @@ class Scheduler:
         while self.pending_jobs:
             for worker_id, worker in enumerate(self.workers):
                 status = worker.poll()
-                print(f"Worker_{worker_id} is {status}")
+                
 
                 if status == Status.BUSY:
                     # Do something? Maybe do nothing?
                     pass
 
                 elif status == Status.FREE:
+                    print(f"Worker_{worker_id} is {status}")
                     ## Cleanup current job on the worker if assigned.
                     if worker.job:
                         
