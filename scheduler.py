@@ -110,7 +110,7 @@ class WorkerClient(Client):
 
         job = "Idle"
         if self.job:
-            job = self.job.name
+            job = self.job.job_name
         
         return f"({self.host}: {job})"
 
@@ -157,7 +157,7 @@ class ParameterServerClient(Client):
         return len(self.job_ports) <= self.max_jobs
 
     def __repr__(self):
-        jobs = [f"<{port}: {job.name}>" for job, port in self.job_ports.items()]
+        jobs = [f"<{port}: {job.job_name}>" for job, port in self.job_ports.items()]
         jobs_str = ", ".join(jobs)
         return f"({self.host}: [{jobs_str}])"
 
