@@ -15,6 +15,8 @@ PS_HOSTS = [
 
 WORKER_HOSTS = [
     '54.172.145.68',
+    '3.91.26.160',
+    
 ]
 
 PS_MAX_JOBS = 8
