@@ -135,6 +135,8 @@ class WorkerDaemon(Daemon):
         elif command == Command.RESET:
             try:
                 self.terminate_parameter_servers()
+                # Terminate workers
+                os.system("kill -9 `ps -ef | grep task2.py | awk '{print $2}'`")
                 self.delete_directory_contents('checkpoints')
                 self.delete_directory_contents('log_folder')
                 self.delete_directory_contents('loss_folder')
