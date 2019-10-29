@@ -114,9 +114,11 @@ class WorkerDaemon(Daemon):
                 job = tokens[1]
 
                 self.log(f"Killing PS for job={job}")
+                self.delete_old_checkpoints(job)
                 job_proc = self.job_ps_process[job]
                 job_proc.terminate()
                 self.job_ps_process.pop(job)
+                self.log(f"Killed PS for job={job}")
 
             except Exception as err:
                 self.log(f"Error: {err}")

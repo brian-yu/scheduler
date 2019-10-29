@@ -21,7 +21,7 @@ class Daemon:
 
     def log(self, s):
         with self.print_lock:
-            print(f"===== {self.name}:", end=" ")
+            print(f"=== {time.ctime()} {self.name}:", end=" ")
             print(s)
 
     def receive(self, message):

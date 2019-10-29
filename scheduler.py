@@ -114,7 +114,7 @@ class ParameterServerClient(Client):
     # TODO: Maybe consider if this needs to use sendRecv?
     def stop_ps(self, job):
         self.deallocate_job(job)
-        return self.send(f"{Command.STOP_PS.value} {job.job_name}")
+        return self.sendRecv(f"{Command.STOP_PS.value} {job.job_name}")
 
     def tf_addr(self, job):
         return f"{self.host}:{self.job_ports[job]}"
