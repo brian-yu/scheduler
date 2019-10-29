@@ -5,8 +5,15 @@ import time
 import argparse
 import random
 from collections import deque, defaultdict
+from ftplib import FTP
+from enum import Enum
 
 from constants import Command, Status
+
+class Mode(Enum):
+    TRAINING = "Training"
+    VALIDATION = "Validation"
+    TESTING = "Testing"
 
 # THESE MUST BE IPV4 ADDRESSES IN ORDER FOR FTP SERVER TO WORK.
 PS_HOSTS = [
@@ -53,6 +60,7 @@ class Client:
         status_str = self.sendRecv(Command.POLL.value)
         return Status(status_str)
 
+    # TODO: Fix inheritance bug.
     def reset(self):
         self.job = None
         return self.sendRecv(Command.RESET.value)
@@ -98,6 +106,14 @@ class WorkerClient(Client):
     def tf_addr(self):
         return f"{self.host}:2222"
 
+    def __repr__(self):
+
+        job = "Idle"
+        if self.job:
+            job = self.job.name
+        
+        return f"({self.host}: {job})"
+
 class ParameterServerClient(Client):
 
     def __init__(self, address_str):
@@ -137,6 +153,13 @@ class ParameterServerClient(Client):
     def deallocate_job(self, job):
         self.job_ports.pop(job)
 
+    def can_allocate_job(self):
+        return len(self.job_ports) <= self.max_jobs
+
+    def __repr__(self):
+        jobs = [f"<{port}: {job.name}>" for job, port in self.job_ports.items()]
+        return f"({self.host}: [{", ".join(jobs)}])"
+
 
 class Job:
     def __init__(self, job_name="default", epochs=3):
@@ -164,8 +187,8 @@ class Job:
 
 
 NUM_JOBS = 6
-NUM_EPOCHS_LO = 5 # will be 25
-NUM_EPOCHS_HI = 8 # will be 30
+NUM_EPOCHS_LO = 2 # will be 25
+NUM_EPOCHS_HI = 2 # will be 30
 
 class Scheduler:
 
@@ -185,17 +208,17 @@ class Scheduler:
             self.jobs = [
                 Job(job_name=f"job_{i}", epochs=get_num_epochs()) for i in range(NUM_JOBS)]
 
-        # self.job_val_accs = defaultdict(list)
+        self.job_val_accs = {job: [] for job in self.jobs}
 
         # Assign parameter servers to jobs. Important! These should never change.
         for i, job in enumerate(self.jobs):
             job.ps = self.parameter_servers[i % len(self.parameter_servers)]
 
-        self.pending_jobs = deque(self.jobs)
-        self.currently_training_jobs = set()
+        # self.pending_jobs = deque(self.jobs)
+        # self.currently_training_jobs = set()
 
 
-    def train(self):
+    def run(self, mode=Mode.TRAINING):
 
         '''
         Invariants to keep in mind
@@ -203,10 +226,24 @@ class Scheduler:
             - job can only be running on 1 worker at a time
             - jobs need to be assigned to PS before being assigned to worker
         '''
+        self.log(f"Beginning {mode.value}.")
 
         start_time = time.time()
 
-        while self.pending_jobs:
+        job_queue = deque(self.jobs)
+        currently_running = set()
+
+        
+        log_interval = 60
+        last_log_time = time.time() - log_interval
+
+        while job_queue:
+
+            if time.time() > last_log_time + log_interval:
+                self.log(self.parameter_servers)
+                self.log(self.workers)
+                self.log(currently_running)
+
             for worker_id, worker in enumerate(self.workers):
                 status = worker.poll()
                 
@@ -216,107 +253,63 @@ class Scheduler:
                     pass
 
                 elif status == Status.FREE:
-                    print(f"Worker_{worker_id} is {status}")
+                    # self.log(f"Worker_{worker_id} is {status}")
                     ## Cleanup current job on the worker if assigned.
                     if worker.job:
                         
                         prev_job = worker.job
 
-                        print(f"Terminating {prev_job} on Worker_{worker_id}")
+                        self.log(f"Suspending {prev_job} on Worker_{worker_id}")
                         
                         # Stop PS for prev job
                         prev_job.ps.stop_ps(prev_job)
-                        self.currently_training_jobs.remove(prev_job)
+
+                        # Remove from set of currently training jobs
+                        currently_running.remove(prev_job)
 
                         # Increment epoch
                         prev_job.increment_epoch()
 
-                        print(f"Terminated job: {prev_job}")
+                        self.log(f"Suspended job: {prev_job}")
 
                         if prev_job.completed:
-                            self.pending_jobs.remove(prev_job)
+                            job_queue.remove(prev_job)
 
                         worker.job = None
 
 
                     # Assign a job to this worker.
-                    if self.pending_jobs:
-                        job = self.pending_jobs.popleft()
-                        self.pending_jobs.append(job)
+                    if job_queue:
+                        job = job_queue.popleft()
+                        job_queue.append(job)
 
-                        if job not in self.currently_training_jobs:
-                            print(f"Assigning {job} to Worker_{worker_id}")
+                        if job not in currently_running and job.ps.can_allocate_job():
+                            self.log(f"Assigning {job} to Worker_{worker_id}")
                             job.assign_to(worker)
-                            self.currently_training_jobs.add(job)
+                            currently_running.add(job)
+
                             job.ps.start_ps(job, worker)
-                            worker.train(job)
+
+                            if mode == Mode.TRAINING:
+                                worker.train(job)
+                            elif mode == Mode.VALIDATION:
+                                worker.validate(job)
+                            elif mode == Mode.TESTING:
+                                worker.test(job)
 
             time.sleep(1)
 
         end_time = time.time()
-        print(f"Finished training in {end_time - start_time} seconds.")
+        self.log(f"Finished {mode.value} in {end_time - start_time} seconds.")
+
+    def train(self):
+        self.run(mode=Mode.TRAINING)
 
     def validate(self):
-        self.val_test()
+        self.run(mode=Mode.VALIDATION)
 
     def test(self):
-        self.val_test(mode="testing")
-
-    def val_test(self, mode="validation"):
-        job_q = deque(self.jobs)
-        currently_testing = set()
-
-        print(f"Beginning {mode}.")
-        start_time = time.time()
-
-        while job_q:
-            for worker_id, worker in enumerate(self.workers):
-                status = worker.poll()
-                print(f"Worker_{worker_id} is {status}")
-
-                if status == Status.BUSY:
-                    # Do something? Maybe do nothing?
-                    pass
-
-                elif status == Status.FREE:
-                    ## Cleanup current job on the worker if assigned.
-                    if worker.job:
-                        
-                        prev_job = worker.job
-
-                        print(f"Terminating {prev_job} on Worker_{worker_id}")
-                        
-                        # Stop PS for prev job
-                        prev_job.ps.stop_ps(prev_job)
-                        currently_testing.remove(prev_job)
-
-                        print(f"Terminated job: {prev_job}")
-
-                        if prev_job.completed:
-                            job_q.remove(prev_job)
-
-                        worker.job = None
-
-
-                    # Assign a job to this worker.
-                    if job_q:
-                        job = job_q.popleft()
-                        job_q.append(job)
-
-                        if job not in currently_testing:
-                            print(f"Begin {mode} of {job} on Worker_{worker_id}")
-                            job.assign_to(worker)
-                            currently_testing.add(job)
-                            job.ps.start_ps(job, worker)
-                            if mode == "testing":
-                                worker.test(job)
-                            else:
-                                worker.validate(job)
-
-            time.sleep(1)
-        end_time = time.time()
-        print(f"Finished {mode} in {end_time - start_time} seconds.")
-
+        self.run(mode=Mode.TESTING)
 
     # Reset all workers and parameter servers.
     def reset_nodes(self):
@@ -324,6 +317,10 @@ class Scheduler:
             worker.reset()
         for ps in self.parameter_servers:
             ps.reset()
+
+    def log(self, s):
+        print(f"{time.ctime()}", end=" ")
+        print(s)
 
 if __name__ == "__main__":
 
@@ -353,4 +350,4 @@ if __name__ == "__main__":
 
     scheduler.train()
     scheduler.validate()
-    # scheduler.test()
+    scheduler.test()
