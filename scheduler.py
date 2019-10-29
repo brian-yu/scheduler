@@ -158,7 +158,8 @@ class ParameterServerClient(Client):
 
     def __repr__(self):
         jobs = [f"<{port}: {job.name}>" for job, port in self.job_ports.items()]
-        return f"({self.host}: [{", ".join(jobs)}])"
+        jobs_str = ", ".join(jobs)
+        return f"({self.host}: [{jobs_str}])"
 
 
 class Job:
@@ -326,25 +327,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Master.')
     args = parser.parse_args()
-
-    # ps_host = '52.90.16.197'
-    # worker_host = '54.172.145.68'
-
-    # ps0 = ParameterServerClient(f'{ps_host}:8888')
-    # worker0 = WorkerClient(f'{worker_host}:8888')
-
-
-    # print(ps0.reset())
-    # print(worker0.reset())
-
-
-    # print(ps0.poll())
-    # print(worker0.poll())
-
-    # # ps0.start_ps('test', 2222, f'{worker_host}:2222')
-    # # worker0.train('test', f'{ps_host}:2222', f'{worker_host}:2222')
-
-    # worker0.validate('test', f'{ps_host}:2222', f'{worker_host}:2222')
 
     scheduler = Scheduler(PS_HOSTS, WORKER_HOSTS)
 
