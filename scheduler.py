@@ -241,9 +241,13 @@ class Scheduler:
         while job_queue:
 
             if time.time() > last_log_time + log_interval:
+                self.log("Parameter servers:")
                 self.log(self.parameter_servers)
+                self.log("Workers:")
                 self.log(self.workers)
+                self.log("Running jobs:")
                 self.log(currently_running)
+                last_log_time = time.time()
 
             for worker_id, worker in enumerate(self.workers):
                 status = worker.poll()
