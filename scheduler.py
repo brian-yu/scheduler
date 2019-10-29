@@ -11,12 +11,13 @@ from constants import Command, Status
 # THESE MUST BE IPV4 ADDRESSES IN ORDER FOR FTP SERVER TO WORK.
 PS_HOSTS = [
     '52.90.16.197',
+    '3.91.26.174',
 ]
 
 WORKER_HOSTS = [
     '54.172.145.68',
     '3.91.26.160',
-
+    '18.234.228.46',
 ]
 
 PS_MAX_JOBS = 8
