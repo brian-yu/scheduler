@@ -367,7 +367,7 @@ def main(_):
 
         if FLAGS.validate:
             #evaluate the model performance in the current epoch
-            with tf.Session(target=server.target) as sess:
+            with tf.Session() as sess:
                 with open('./log_folder/' + j_name + '_log', 'a') as f:
                     f.write('\n\nevaluating the accuracy on the validation set')
 
@@ -418,7 +418,7 @@ def main(_):
 
         if FLAGS.test:
             #Test the model performance after training
-            with tf.Session(target=server.target) as sess:
+            with tf.Session() as sess:
                 with open('./log_folder/' + j_name + '_log', 'a') as f:
                     f.write('\n\ntest the model accuracy after training')
 
