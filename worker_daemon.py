@@ -53,6 +53,7 @@ class WorkerDaemon(Daemon):
                 '''
                 self.logger.log_event_start(job, Event.DOWNLOAD)
                 # self.download_train_files(job, prev_worker_host)
+                # if prev_worker_host != "None" and prev_worker_host != worker_host:
                 self.download_latest_model(job, prev_worker_host)
                 self.logger.log_event_end(job, Event.DOWNLOAD)
 
@@ -74,7 +75,9 @@ class WorkerDaemon(Daemon):
                 self.log(f"Validating job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
 
                 # Download 'latest_model_{jobName}.ckpt' .index and .data files.
+                # if prev_worker_host != "None" and prev_worker_host != worker_host:
                 self.download_latest_model(job, prev_worker_host)
+                # self.download_latest_model(job, prev_worker_host)
 
                 os.system(f"python3 task3.py --job={job} --validate")
                 self.log("Validation finished.")
@@ -94,6 +97,8 @@ class WorkerDaemon(Daemon):
                 self.log(f"Testing job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
 
                 # Download 'latest_model_{jobName}.ckpt' .index and .data files.
+                # self.download_latest_model(job, prev_worker_host)
+                # if prev_worker_host != "None" and prev_worker_host != worker_host:
                 self.download_latest_model(job, prev_worker_host)
 
                 os.system(f"python3 task3.py --job={job} --test")
@@ -193,6 +198,8 @@ class WorkerDaemon(Daemon):
 
     def download_latest_model(self, job, prev_worker_host):
         if prev_worker_host == "None":
+            return
+        if self.same_node(prev_worker_host):
             return
         # Download 'latest_model_{jobName}.ckpt' .index and .data files.
         fnames = [
