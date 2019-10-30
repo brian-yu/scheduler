@@ -349,6 +349,10 @@ class Scheduler:
     # Download worker logs and test accuracy / loss
     def download_logs(self):
         for worker_id, worker in enumerate(self.workers):
+
+            if os.environ['PUBLIC_IP'] and os.environ['PUBLIC_IP'] == worker.host:
+                continue
+
             with FTP(worker.host, user="checkpoints", passwd="test") as ftp:
                 # download worker log
                 file_path = os.path.join('log_folder', 'worker_log')
@@ -358,15 +362,15 @@ class Scheduler:
                     ftp.retrbinary(f'RETR {file_path}', fp.write)
 
                 # download accuracy files
-                for acc_file in ftp.nlst('/accuracy_folder'):
-                    path = os.path.join('/accuracy_folder', acc_file)
+                for acc_file in ftp.nlst('accuracy_folder'):
+                    path = os.path.join('accuracy_folder', acc_file)
                     self.create_dir(path)
                     with open(path, 'wb') as fp:
                         ftp.retrbinary(f'RETR {path}', fp.write)
 
                 # download loss files
-                for acc_file in ftp.nlst('/loss_folder'):
-                    path = os.path.join('/loss_folder', acc_file)
+                for acc_file in ftp.nlst('loss_folder'):
+                    path = os.path.join('loss_folder', acc_file)
                     self.create_dir(path)
                     with open(path, 'wb') as fp:
                         ftp.retrbinary(f'RETR {path}', fp.write)
