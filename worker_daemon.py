@@ -20,7 +20,7 @@ class WorkerDaemon(Daemon):
 
         Daemon.__init__(self, host, port, name)
 
-        self.job_ps_process = {}
+        # self.job_ps_process = {}
         # self.job_worker_process = {}
         self.worker_status = Status.FREE
         self.worker_status_lock = Lock()
@@ -125,7 +125,7 @@ class WorkerDaemon(Daemon):
 
         elif command == Command.RESET:
             try:
-                self.terminate_parameter_servers()
+                # self.terminate_parameter_servers()
                 # Terminate workers
                 os.system("kill -9 `ps -ef | grep task3.py | awk '{print $2}'`")
                 self.delete_directory_contents('checkpoints')

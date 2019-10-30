@@ -8,7 +8,7 @@ from enum import Enum
 import os
 
 from constants import Command, Status, Event
-from clients import WorkerClient, ParameterServerClient
+from clients import WorkerClient
 
 class Mode(Enum):
     TRAINING = "Training"
@@ -57,9 +57,9 @@ class Job:
         return f"({self.job_name}, epoch {self.curr_epoch + 1} of {self.epochs})"
 
 
-NUM_JOBS = 6
-NUM_EPOCHS_LO = 25 # will be 25
-NUM_EPOCHS_HI = 30 # will be 30
+NUM_JOBS = 5
+NUM_EPOCHS_LO = 2 # will be 25
+NUM_EPOCHS_HI = 2 # will be 30
 
 class Scheduler:
 
@@ -177,7 +177,7 @@ class Scheduler:
                         job = job_queue.popleft()
                         job_queue.append(job)
 
-                        if job not in currently_running and job.ps.can_allocate_job():
+                        if job not in currently_running:
                             self.log(f"Assigning {job} to Worker_{worker_id}")
                             job.assign_to(worker)
                             currently_running.add(job)
