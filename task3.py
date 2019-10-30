@@ -329,7 +329,7 @@ def main(_):
         if FLAGS.train:
 
             #while num_epoch < epochs:
-            with tf.Session(config=config) as mon_sess:
+            with tf.Session(config=config) as sess:
 
 
                 ckpt = train_folder + "/latest_model_" + j_name + ".ckpt"
@@ -337,7 +337,7 @@ def main(_):
                     print(f"Restoring model from {ckpt}")
                     saver.restore(sess, ckpt)
                 else:
-                    mon_sess.run(init)
+                    sess.run(init)
 
                 print('training')
                 logger.log_event_start(j_name, Event.TRAIN)
@@ -345,7 +345,7 @@ def main(_):
                 for j in range(0, steps - remaining, step_size):
                 # for j in range(0, 200, step_size):
                     #Feeding step_size-amount data with 0.5 keeping probabilities on DROPOUT LAYERS
-                    _, c = mon_sess.run(
+                    _, c = sess.run(
                         [train_op, cross_entropy],
                         feed_dict={
                             x: X[j:j + step_size],
@@ -361,7 +361,7 @@ def main(_):
                 logger.log_event_end(j_name, Event.TRAIN)
 
                 logger.log_event_start(j_name, Event.SAVE)
-                saver.save(get_session(mon_sess),
+                saver.save(get_session(sess),
                            train_folder + "/latest_model_" + j_name + ".ckpt")
                 logger.log_event_end(j_name, Event.SAVE)
 
