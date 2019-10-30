@@ -8,6 +8,7 @@ import random
 from collections import deque, defaultdict
 from ftplib import FTP
 from enum import Enum
+import os
 
 from constants import Command, Status, Event
 
