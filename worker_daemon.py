@@ -192,6 +192,8 @@ class WorkerDaemon(Daemon):
     #     self.download_checkpoint_files(job, ps_host, fnames)
 
     def download_latest_model(self, job, prev_worker_host):
+        if prev_worker_host == "None":
+            return
         # Download 'latest_model_{jobName}.ckpt' .index and .data files.
         fnames = [
             f"latest_model_{job}.ckpt.index",

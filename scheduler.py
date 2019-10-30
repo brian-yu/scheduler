@@ -144,7 +144,8 @@ class Scheduler:
                         self.log(f"Suspending {prev_job} on Worker_{worker_id}")
 
                         # Delete unneeded checkpoint files from old worker.
-                        prev_job.prev_worker.clean(prev_job)
+                        if prev_job.prev_worker:
+                            prev_job.prev_worker.clean(prev_job)
 
 
                         # Log potential errors.
