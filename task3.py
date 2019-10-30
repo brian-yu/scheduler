@@ -336,6 +336,8 @@ def main(_):
                 if os.path.exists(ckpt + ".index"):
                     print(f"Restoring model from {ckpt}")
                     saver.restore(sess, ckpt)
+                else:
+                    mon_sess.run(init)
 
                 print('training')
                 logger.log_event_start(j_name, Event.TRAIN)
