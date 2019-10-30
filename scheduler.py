@@ -57,9 +57,9 @@ class Job:
         return f"({self.job_name}, epoch {self.curr_epoch + 1} of {self.epochs})"
 
 
-NUM_JOBS = 5
-NUM_EPOCHS_LO = 2 # will be 25
-NUM_EPOCHS_HI = 2 # will be 30
+NUM_JOBS = 10
+NUM_EPOCHS_LO = 3 # will be 25
+NUM_EPOCHS_HI = 5 # will be 30
 
 class Scheduler:
 
@@ -144,8 +144,8 @@ class Scheduler:
                         self.log(f"Suspending {prev_job} on Worker_{worker_id}")
 
                         # Delete unneeded checkpoint files from old worker.
-                        if prev_job.prev_worker:
-                            prev_job.prev_worker.clean(prev_job)
+                        # if prev_job.prev_worker:
+                        #     prev_job.prev_worker.clean(prev_job)
 
 
                         # Log potential errors.
@@ -221,7 +221,7 @@ class Scheduler:
     def download_logs(self):
         for worker_id, worker in enumerate(self.workers):
 
-            if os.environ['PUBLIC_IP'] and os.environ['PUBLIC_IP'] == worker.host:
+            if 'PUBLIC_IP' in os.environ and os.environ['PUBLIC_IP'] == worker.host:
                 continue
 
             with FTP(worker.host, user="checkpoints", passwd="test") as ftp:
