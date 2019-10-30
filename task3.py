@@ -299,7 +299,7 @@ def main(_):
         # global_step = tf.train.get_or_create_global_step()
 
         train_op = tf.train.AdamOptimizer(0.00001).minimize(
-            cross_entropy, global_step=global_step)
+            cross_entropy)
 
         matches = tf.equal(tf.argmax(y_pred, 1), tf.argmax(y_true, 1))
         acc = tf.reduce_mean(tf.cast(matches, tf.float32))
