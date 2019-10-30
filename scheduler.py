@@ -255,6 +255,7 @@ class Scheduler:
                     f"{tab}Running jobs:",
                     f"{tab}{currently_running}",
                 ])
+                self.log(message)
                 last_log_time = time.time()
 
             for worker_id, worker in enumerate(self.workers):
