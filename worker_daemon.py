@@ -52,10 +52,8 @@ class WorkerDaemon(Daemon):
                 Then the worker daemon will read the times and send salient timing information.
                 '''
                 self.logger.log_event_start(job, Event.DOWNLOAD)
-                # self.download_train_files(job, prev_worker_host)
-                # if prev_worker_host != "None" and prev_worker_host != worker_host:
                 self.download_latest_model(job, prev_worker_host)
-                self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
+                # self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
 
                 self.logger.log_event_end(job, Event.DOWNLOAD)
 
@@ -77,10 +75,8 @@ class WorkerDaemon(Daemon):
                 self.log(f"Validating job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
 
                 # Download 'latest_model_{jobName}.ckpt' .index and .data files.
-                # if prev_worker_host != "None" and prev_worker_host != worker_host:
                 self.download_latest_model(job, prev_worker_host)
-                self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
-                # self.download_latest_model(job, prev_worker_host)
+                # self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
 
                 os.system(f"python3 task3.py --job={job} --validate")
                 self.log("Validation finished.")
@@ -100,10 +96,8 @@ class WorkerDaemon(Daemon):
                 self.log(f"Testing job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
 
                 # Download 'latest_model_{jobName}.ckpt' .index and .data files.
-                # self.download_latest_model(job, prev_worker_host)
-                # if prev_worker_host != "None" and prev_worker_host != worker_host:
                 self.download_latest_model(job, prev_worker_host)
-                self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
+                # self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
 
                 os.system(f"python3 task3.py --job={job} --test")
                 self.log("Testing finished.")
@@ -211,7 +205,11 @@ class WorkerDaemon(Daemon):
             f"latest_model_{job}.ckpt.meta",
             f"latest_model_{job}.ckpt.data-00000-of-00001"]
 
+        # Download files.
         self.download_checkpoint_files(job, prev_worker_host, fnames)
+
+        # Delete from prev worker.
+        self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
 
     def download_checkpoint_files(self, job, host, fnames):
         self.log(f"Downloading {fnames} from {host}")
@@ -226,16 +224,7 @@ class WorkerDaemon(Daemon):
                 ftp.retrbinary(f'RETR {fname}', fp.write)
         self.log(f"Downloaded {fnames} from {host}.")
 
-
-    # def terminate_parameter_servers(self):
-    #     self.log(f"Killing {len(self.job_ps_process)} PS processes.")
-    #     for job, ps_proc in self.job_ps_process.items():
-    #         self.log(f"Killing PS for {job}")
-    #         ps_proc.terminate()
-    #     self.job_ps_process = {}
-
     def cleanup(self, signal, frame):
-        # self.terminate_parameter_servers()
         self.sock.close()
         self.log("Exiting.")
         sys.exit(0)
