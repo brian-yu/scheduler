@@ -245,12 +245,16 @@ class Scheduler:
         while job_queue:
 
             if time.time() > last_log_time + log_interval:
-                self.log("Parameter servers:")
-                self.log(self.parameter_servers)
-                self.log("Workers:")
-                self.log(self.workers)
-                self.log("Running jobs:")
-                self.log(currently_running)
+                tab = "\t\t\t"
+                message = "\n".join([
+                    "",
+                    f"{tab}Parameter servers:",
+                    f"{tab}{self.parameter_servers}",
+                    f"{tab}Workers:",
+                    f"{tab}{self.workers}",
+                    f"{tab}Running jobs:",
+                    f"{tab}{currently_running}",
+                ])
                 last_log_time = time.time()
 
             for worker_id, worker in enumerate(self.workers):
@@ -273,7 +277,7 @@ class Scheduler:
 
                         # Log potential errors.
                         if time.time() - prev_job.start_time < 10:
-                            warning = f"{job} ended  {mode.value} less than 10 seconds after being started."
+                            warning = f"{job} ended {mode.value} less than 10 seconds after being started."
                             self.log(f"WARNING: {warning}")
                             self.warnings.append(warning)
 
