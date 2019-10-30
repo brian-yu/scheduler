@@ -312,7 +312,7 @@ def main(_):
         # The MonitoredTrainingSession takes care of session initialization,
         # restoring from a checkpoint, saving to a checkpoint, and closing when done
         # or an error occurs.
-        #init = tf.global_variables_initializer()
+        init = tf.global_variables_initializer()
         acc_list = []
         auc_list = []
         loss_list = []
