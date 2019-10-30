@@ -55,7 +55,7 @@ class WorkerDaemon(Daemon):
                 # self.download_train_files(job, prev_worker_host)
                 # if prev_worker_host != "None" and prev_worker_host != worker_host:
                 self.download_latest_model(job, prev_worker_host)
-                self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN} {job}")
+                self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
 
                 self.logger.log_event_end(job, Event.DOWNLOAD)
 
@@ -79,7 +79,7 @@ class WorkerDaemon(Daemon):
                 # Download 'latest_model_{jobName}.ckpt' .index and .data files.
                 # if prev_worker_host != "None" and prev_worker_host != worker_host:
                 self.download_latest_model(job, prev_worker_host)
-                self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN} {job}")
+                self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
                 # self.download_latest_model(job, prev_worker_host)
 
                 os.system(f"python3 task3.py --job={job} --validate")
@@ -103,7 +103,7 @@ class WorkerDaemon(Daemon):
                 # self.download_latest_model(job, prev_worker_host)
                 # if prev_worker_host != "None" and prev_worker_host != worker_host:
                 self.download_latest_model(job, prev_worker_host)
-                self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN} {job}")
+                self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
 
                 os.system(f"python3 task3.py --job={job} --test")
                 self.log("Testing finished.")
