@@ -2,6 +2,7 @@ from socket import socket, AF_INET, SOCK_STREAM # portable socket api
 from threading import Thread
 import sys
 import time
+from datetime import datetime
 import argparse
 import random
 from collections import deque, defaultdict
@@ -184,7 +185,7 @@ class Job:
             self.completed = True
 
     def __repr__(self):
-        return f"({self.job_name}, curr_epoch={self.curr_epoch}, total_epochs={self.epochs})"
+        return f"({self.job_name}, epoch {self.curr_epoch + 1} of {self.epochs})"
 
 
 NUM_JOBS = 6
@@ -324,7 +325,7 @@ class Scheduler:
             ps.reset()
 
     def log(self, s):
-        print(f"{time.ctime()}", end=" ")
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:", end=" ")
         print(s)
 
 if __name__ == "__main__":
