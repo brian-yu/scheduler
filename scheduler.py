@@ -16,10 +16,6 @@ class Mode(Enum):
     TESTING = "Testing"
 
 # THESE MUST BE IPV4 ADDRESSES IN ORDER FOR FTP SERVER TO WORK.
-# PS_HOSTS = [
-#     '52.90.16.197',
-#     '3.91.26.174',
-# ]
 
 WORKER_HOSTS = [
     '54.172.145.68',
@@ -28,8 +24,6 @@ WORKER_HOSTS = [
     '52.90.16.197',
     '3.91.26.174',
 ]
-
-# PS_MAX_JOBS = 5
 
 class Job:
     def __init__(self, job_name="default", epochs=3):
@@ -41,7 +35,6 @@ class Job:
 
         self.worker = None
         self.prev_worker = None
-        # self.ps = None
 
     def assign_to(self, worker):
         self.prev_worker = self.worker
@@ -58,14 +51,12 @@ class Job:
 
 
 NUM_JOBS = 10
-NUM_EPOCHS_LO = 3 # will be 25
-NUM_EPOCHS_HI = 5 # will be 30
+NUM_EPOCHS_LO = 5 # will be 25
+NUM_EPOCHS_HI = 10 # will be 30
 
 class Scheduler:
 
     def __init__(self, worker_hosts, jobs=None):
-        # self.parameter_servers = [
-        #     ParameterServerClient(f"{ps_host}:8888", max_jobs=PS_MAX_JOBS) for ps_host in ps_hosts]
         self.workers = [
             WorkerClient(f"{worker_host}:8888") for worker_host in worker_hosts]
 
@@ -81,13 +72,6 @@ class Scheduler:
 
         # self.job_val_accs = {job: [] for job in self.jobs}
 
-        # Assign parameter servers to jobs. Important! These should never change.
-        # for i, job in enumerate(self.jobs):
-        #     job.ps = self.parameter_servers[i % len(self.parameter_servers)]
-
-        # self.pending_jobs = deque(self.jobs)
-        # self.currently_training_jobs = set()
-
         self.warnings = []
 
 
@@ -95,9 +79,7 @@ class Scheduler:
 
         '''
         Invariants to keep in mind
-            - need to limit number of jobs on a PS < 10 (8 to be safe)
             - job can only be running on 1 worker at a time
-            - jobs need to be assigned to PS before being assigned to worker
         '''
         self.log(f"===== Beginning {mode.value}.")
 
@@ -116,8 +98,6 @@ class Scheduler:
                 tab = "\t\t\t"
                 message = "\n".join([
                     "",
-                    # f"{tab}Parameter servers:",
-                    # f"{tab}\t{self.parameter_servers}",
                     f"{tab}Workers:",
                     f"{tab}\t{self.workers}",
                     f"{tab}Running jobs:",
@@ -135,17 +115,13 @@ class Scheduler:
                     pass
 
                 elif status == Status.FREE:
-                    # self.log(f"Worker_{worker_id} is {status}")
+
                     ## Cleanup current job on the worker if assigned.
                     if worker.job:
                         
                         prev_job = worker.job
 
                         self.log(f"Suspending {prev_job} on Worker_{worker_id}")
-
-                        # Delete unneeded checkpoint files from old worker.
-                        # if prev_job.prev_worker:
-                        #     prev_job.prev_worker.clean(prev_job)
 
 
                         # Log potential errors.
@@ -155,8 +131,6 @@ class Scheduler:
                             self.warnings.append(warning)
 
                         
-                        # Stop PS for prev job
-                        # prev_job.ps.stop_ps(prev_job)
 
                         # Remove from set of currently training jobs
                         currently_running.remove(prev_job)
@@ -183,8 +157,6 @@ class Scheduler:
                             job.assign_to(worker)
                             currently_running.add(job)
 
-                            # job.ps.start_ps(job, worker)
-
                             if mode == Mode.TRAINING:
                                 worker.train(job)
                             elif mode == Mode.VALIDATION:
@@ -206,12 +178,10 @@ class Scheduler:
     def test(self):
         self.run(mode=Mode.TESTING)
 
-    # Reset all workers and parameter servers.
+    # Reset all workers.
     def reset_nodes(self):
         for worker in self.workers:
             worker.reset()
-        # for ps in self.parameter_servers:
-        #     ps.reset()
 
     def log(self, s):
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:", end=" ")
@@ -219,6 +189,7 @@ class Scheduler:
 
     # Download worker logs and test accuracy / loss
     def download_logs(self):
+        self.log("Downloading worker logs and test results.")
         for worker_id, worker in enumerate(self.workers):
 
             if 'PUBLIC_IP' in os.environ and os.environ['PUBLIC_IP'] == worker.host:
@@ -245,6 +216,7 @@ class Scheduler:
                     self.create_dir(path)
                     with open(path, 'wb') as fp:
                         ftp.retrbinary(f'RETR {path}', fp.write)
+        self.log("Finished downloading.")
 
     def create_dir(self, path):
         if not os.path.exists(os.path.dirname(path)):
