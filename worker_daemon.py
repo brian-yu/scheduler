@@ -177,14 +177,15 @@ class WorkerDaemon(Daemon):
         ps = self.hostname(ps_host)
         prev_worker = self.hostname(prev_worker_host)
 
-        # Need to Download checkpoint and .meta files first, so that we can read them 
-        # to determine which .index file to download from the PS.
+        # Need to download checkpoint file first, so that we can read it 
+        # and determine which .index file to download from the PS and which .meta
+        # file to download.
         self.log(f"Same as previous worker? {self.same_node(prev_worker)}")
         if not self.same_node(prev_worker):
             fnames = ['checkpoint']
             self.download_checkpoint_files(job, prev_worker, fnames)
 
-        # Download .index file from PS
+        # Download .index file from PS and .meta file from prev worker.
         with open(f"checkpoints/{job}/checkpoint") as f:
             full_path = f.readline().rstrip("\n").rstrip("\"").split(":")[1]
             self.log(f"CKPT_PATH={full_path}")
