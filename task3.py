@@ -465,23 +465,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.register("type", "bool", lambda v: v.lower() == "true")
     # Flags for defining the tf.train.ClusterSpec
-    parser.add_argument("--ps_hosts",
-                        type=str,
-                        default="",
-                        help="Comma-separated list of hostname:port pairs")
-    parser.add_argument("--worker_hosts",
-                        type=str,
-                        default="",
-                        help="Comma-separated list of hostname:port pairs")
-    parser.add_argument("--job_name",
-                        type=str,
-                        default="",
-                        help="One of 'ps', 'worker'")
+    # parser.add_argument("--ps_hosts",
+    #                     type=str,
+    #                     default="",
+    #                     help="Comma-separated list of hostname:port pairs")
+    # parser.add_argument("--worker_hosts",
+    #                     type=str,
+    #                     default="",
+    #                     help="Comma-separated list of hostname:port pairs")
+    # parser.add_argument("--job_name",
+    #                     type=str,
+    #                     default="",
+    #                     help="One of 'ps', 'worker'")
     # Flags for defining the tf.train.Server
-    parser.add_argument("--task_index",
-                        type=int,
-                        default=0,
-                        help="Index of task within the job")
+    # parser.add_argument("--task_index",
+    #                     type=int,
+    #                     default=0,
+    #                     help="Index of task within the job")
     parser.add_argument("--train_folder",
                         type=str,
                         default="./checkpoints/default",
@@ -490,10 +490,10 @@ if __name__ == "__main__":
                         type=str,
                         default="default",
                         help="indicate the name of the job")
-    parser.add_argument("--task",
-                        type=str,
-                        default="default",
-                        help="indicate the index of the task")
+    # parser.add_argument("--task",
+    #                     type=str,
+    #                     default="default",
+    #                     help="indicate the index of the task")
     parser.add_argument('--train', help='whether to train or not', action='store_true')
     parser.add_argument('--validate', help='whether to validate or not', action='store_true')
     parser.add_argument('--test', help='whether to test or not', action='store_true')
