@@ -9,7 +9,7 @@ from collections import deque, defaultdict
 from ftplib import FTP
 from enum import Enum
 
-from constants import Command, Status
+from constants import Command, Status, Event
 
 class Mode(Enum):
     TRAINING = "Training"
@@ -189,9 +189,9 @@ class Job:
         return f"({self.job_name}, epoch {self.curr_epoch + 1} of {self.epochs})"
 
 
-NUM_JOBS = 6
-NUM_EPOCHS_LO = 2 # will be 25
-NUM_EPOCHS_HI = 2 # will be 30
+NUM_JOBS = 3
+NUM_EPOCHS_LO = 1 # will be 25
+NUM_EPOCHS_HI = 1 # will be 30
 
 class Scheduler:
 
@@ -249,11 +249,11 @@ class Scheduler:
                 message = "\n".join([
                     "",
                     f"{tab}Parameter servers:",
-                    f"{tab}{self.parameter_servers}",
+                    f"{tab}\t{self.parameter_servers}",
                     f"{tab}Workers:",
-                    f"{tab}{self.workers}",
+                    f"{tab}\t{self.workers}",
                     f"{tab}Running jobs:",
-                    f"{tab}{currently_running}",
+                    f"{tab}\t{currently_running}",
                 ])
                 self.log(message)
                 last_log_time = time.time()
@@ -345,6 +345,40 @@ class Scheduler:
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:", end=" ")
         print(s)
 
+    # Download worker logs and test accuracy / loss
+    def download_logs(self):
+        for worker_id, worker in enumerate(self.workers):
+            with FTP(worker.host, user="checkpoints", passwd="test") as ftp:
+                # download worker log
+                file_path = os.path.join('log_folder', 'worker_log')
+                save_path = os.path.join('log_folder', f'worker_{worker_id}_log')
+                self.create_dir(save_path)
+                with open(save_path, 'wb') as fp:
+                    ftp.retrbinary(f'RETR {file_path}', fp.write)
+
+                # download accuracy files
+                for acc_file in ftp.nlst('/accuracy_folder'):
+                    path = os.path.join('/accuracy_folder', acc_file)
+                    self.create_dir(path)
+                    with open(path, 'wb') as fp:
+                        ftp.retrbinary(f'RETR {path}', fp.write)
+
+                # download loss files
+                for acc_file in ftp.nlst('/loss_folder'):
+                    path = os.path.join('/loss_folder', acc_file)
+                    self.create_dir(path)
+                    with open(path, 'wb') as fp:
+                        ftp.retrbinary(f'RETR {path}', fp.write)
+
+    def create_dir(self, path):
+        if not os.path.exists(os.path.dirname(path)):
+            try:
+                os.makedirs(os.path.dirname(path))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Master.')
@@ -355,6 +389,8 @@ if __name__ == "__main__":
     scheduler.train()
     scheduler.validate()
     scheduler.test()
+
+    scheduler.download_logs()
 
 
     for warning in scheduler.warnings:

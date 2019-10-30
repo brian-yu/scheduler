@@ -12,7 +12,7 @@ import re
 import glob
 
 from daemon import Daemon
-from constants import Command, Status
+from constants import Command, Status, Event, Logger
 
 class WorkerDaemon(Daemon):
 
@@ -24,6 +24,8 @@ class WorkerDaemon(Daemon):
         # self.job_worker_process = {}
         self.worker_status = Status.FREE
         self.worker_status_lock = Lock()
+
+        self.logger = Logger()
 
     def receive(self, message):
         tokens = message.split()
@@ -49,7 +51,10 @@ class WorkerDaemon(Daemon):
                 For timing, maybe have task2.py log times in ./log_folder/times.txt.
                 Then the worker daemon will read the times and send salient timing information.
                 '''
+                self.logger.log_event_start(job, Event.DOWNLOAD)
                 self.download_train_files(job, ps_host, prev_worker_host)
+                self.logger.log_event_end(job, Event.DOWNLOAD)
+
                 os.system(f"python3 task2.py --ps_hosts={ps_host} --worker_hosts={worker_host} --job_name=worker --task_index=0 --job={job} --train")
                 self.log("Training finished.")
             except Exception as err:
@@ -177,7 +182,7 @@ class WorkerDaemon(Daemon):
         self.log(f"Same as previous worker? {self.same_node(prev_worker)}")
         if not self.same_node(prev_worker):
             fnames = ['checkpoint']
-            self.download_files(job, prev_worker, fnames)
+            self.download_checkpoint_files(job, prev_worker, fnames)
 
         # Download .index file from PS
         with open(f"checkpoints/{job}/checkpoint") as f:
@@ -188,21 +193,21 @@ class WorkerDaemon(Daemon):
             index = f"{ckpt}.index"
             meta = f"{ckpt}.meta"
             # Download .index file from ps
-            self.download_files(job, ps, [index])
+            self.download_checkpoint_files(job, ps, [index])
             # Download .meta file from prev_worker
             if not self.same_node(prev_worker):
-                self.download_files(job, prev_worker, [meta])
+                self.download_checkpoint_files(job, prev_worker, [meta])
 
     def download_latest_model(self, job, ps_hosts):
         # Download 'latest_model_{jobName}.ckpt' .index and .data files.
         fnames = [f"latest_model_{job}.ckpt.index", f"latest_model_{job}.ckpt.data-00000-of-00001"]
         ps_host = ps_hosts.split(":")[0]
-        self.download_files(job, ps_host, fnames)
+        self.download_checkpoint_files(job, ps_host, fnames)
 
-    def download_files(self, job, host, fnames):
+    def download_checkpoint_files(self, job, host, fnames):
         self.log(f"Downloading {fnames} from {host}")
         ftp = FTP(host, user="checkpoints", passwd="test")
-        ftp.cwd(job)
+        ftp.cwd(os.path.join('checkpoints', job))
         with self.print_lock:
             ftp.dir()
         for fname in fnames:
