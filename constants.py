@@ -10,6 +10,7 @@ class Command(Enum):
     STOP_PS = "STOP_PS"
     POLL = "POLL"
     RESET = "RESET"
+    CLEAN = "CLEAN"
 
 class Status(Enum):
     FREE = "FREE"
