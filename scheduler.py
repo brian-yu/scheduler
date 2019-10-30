@@ -50,9 +50,9 @@ class Job:
         return f"({self.job_name}, epoch {self.curr_epoch + 1} of {self.epochs})"
 
 
-NUM_JOBS = 10
-NUM_EPOCHS_LO = 5 # will be 25
-NUM_EPOCHS_HI = 10 # will be 30
+NUM_JOBS = 25
+NUM_EPOCHS_LO = 25 # will be 25
+NUM_EPOCHS_HI = 30 # will be 30
 
 class Scheduler:
 
