@@ -178,6 +178,7 @@ class Job:
     def assign_to(self, worker):
         self.prev_worker = self.worker
         self.worker = worker
+        self.start_time = time.time()
 
     def increment_epoch(self):
         self.curr_epoch += 1
@@ -219,6 +220,8 @@ class Scheduler:
         # self.pending_jobs = deque(self.jobs)
         # self.currently_training_jobs = set()
 
+        self.warnings = []
+
 
     def run(self, mode=Mode.TRAINING):
 
@@ -228,7 +231,7 @@ class Scheduler:
             - job can only be running on 1 worker at a time
             - jobs need to be assigned to PS before being assigned to worker
         '''
-        self.log(f"Beginning {mode.value}.")
+        self.log(f"===== Beginning {mode.value}.")
 
         start_time = time.time()
 
@@ -266,6 +269,14 @@ class Scheduler:
                         prev_job = worker.job
 
                         self.log(f"Suspending {prev_job} on Worker_{worker_id}")
+
+
+                        # Log potential errors.
+                        if time.time() - prev_job.start_time < 10:
+                            warning = f"{job} ended  {mode.value} less than 10 seconds after being started."
+                            self.log(f"WARNING: {warning}")
+                            self.warnings.append(warning)
+
                         
                         # Stop PS for prev job
                         prev_job.ps.stop_ps(prev_job)
@@ -274,7 +285,8 @@ class Scheduler:
                         currently_running.remove(prev_job)
 
                         # Increment epoch
-                        prev_job.increment_epoch()
+                        if mode == Mode.TRAINING:
+                            prev_job.increment_epoch()
 
                         self.log(f"Suspended job: {prev_job}")
 
@@ -306,7 +318,7 @@ class Scheduler:
             time.sleep(1)
 
         end_time = time.time()
-        self.log(f"Finished {mode.value} in {end_time - start_time} seconds.")
+        self.log(f"===== Finished {mode.value} in {end_time - start_time} seconds.")
 
     def train(self):
         self.run(mode=Mode.TRAINING)
@@ -338,3 +350,7 @@ if __name__ == "__main__":
     scheduler.train()
     scheduler.validate()
     scheduler.test()
+
+
+    for warning in scheduler.warnings:
+        print(warning)
