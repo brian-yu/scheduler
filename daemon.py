@@ -28,6 +28,15 @@ class Daemon:
         self.log(message)
         return "DONE"
 
+    def sendRecv(self, address, message):
+        sock = socket(AF_INET, SOCK_STREAM)
+        sock.connect(address)
+        sock.send(message.encode())
+        reply = sock.recv(1024).decode()
+        sock.close()
+        # print(f"{message} -> {reply}")
+        return reply
+
     def handleClient(self, connection):
         while True:
             # try:

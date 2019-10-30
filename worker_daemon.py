@@ -20,7 +20,7 @@ class WorkerDaemon(Daemon):
 
         Daemon.__init__(self, host, port, name)
 
-        self.job_ps_process = {}
+        # self.job_ps_process = {}
         # self.job_worker_process = {}
         self.worker_status = Status.FREE
         self.worker_status_lock = Lock()
@@ -43,19 +43,21 @@ class WorkerDaemon(Daemon):
         if command == Command.TRAIN:
 
             try:
-                job, ps_host, worker_host, prev_worker_host = tokens[1:5]
+                job, worker_host, prev_worker_host = tokens[1:4]
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
-                self.log(f"Training job={job}, ps_hosts={ps_host}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
+                self.log(f"Training job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
                 '''
                 For timing, maybe have task2.py log times in ./log_folder/times.txt.
                 Then the worker daemon will read the times and send salient timing information.
                 '''
                 self.logger.log_event_start(job, Event.DOWNLOAD)
-                self.download_train_files(job, ps_host, prev_worker_host)
+                self.download_latest_model(job, prev_worker_host)
+                # self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
+
                 self.logger.log_event_end(job, Event.DOWNLOAD)
 
-                os.system(f"python3 task2.py --ps_hosts={ps_host} --worker_hosts={worker_host} --job_name=worker --task_index=0 --job={job} --train")
+                os.system(f"python3 task3.py --job={job} --train")
                 self.log("Training finished.")
             except Exception as err:
                 self.log(f"Error: {err}")
@@ -66,15 +68,17 @@ class WorkerDaemon(Daemon):
         elif command == Command.VALIDATE:
 
             try:
-                job, ps_hosts, worker_hosts = tokens[1:4]
+                job, worker_host, prev_worker_host = tokens[1:4]
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
-                self.log(f"Validating job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
+                # self.log(f"Validating job={job}, worker_host={worker_host}")
+                self.log(f"Validating job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
 
                 # Download 'latest_model_{jobName}.ckpt' .index and .data files.
-                self.download_latest_model(job, ps_hosts)
+                self.download_latest_model(job, prev_worker_host)
+                # self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
 
-                os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job} --validate")
+                os.system(f"python3 task3.py --job={job} --validate")
                 self.log("Validation finished.")
             except Exception as err:
                 self.log(f"Error: {err}")
@@ -85,48 +89,23 @@ class WorkerDaemon(Daemon):
         elif command == Command.TEST:
 
             try:
-                job, ps_hosts, worker_hosts = tokens[1:4]
+                job, worker_host, prev_worker_host = tokens[1:4]
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
-                self.log(f"Testing job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
+                # self.log(f"Testing job={job}, worker_hosts={worker_hosts}")
+                self.log(f"Testing job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
 
                 # Download 'latest_model_{jobName}.ckpt' .index and .data files.
-                self.download_latest_model(job, ps_hosts)
+                self.download_latest_model(job, prev_worker_host)
+                # self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
 
-                os.system(f"python3 task2.py --ps_hosts={ps_hosts} --worker_hosts={worker_hosts} --job_name=worker --task_index=0 --job={job} --test")
+                os.system(f"python3 task3.py --job={job} --test")
                 self.log("Testing finished.")
             except Exception as err:
                 self.log(f"Error: {err}")
             finally:
                 with self.worker_status_lock:
                     self.worker_status = Status.FREE
-
-        elif command == Command.START_PS:
-            try:
-                job, ps_hosts, worker_hosts = tokens[1:4]
-                self.log(f"Starting PS for job={job}, ps_hosts={ps_hosts}, worker_hosts={worker_hosts}")
-                self.delete_old_checkpoints(job)
-                proc = subprocess.Popen(
-                    ['python3', 'task2.py', f"--ps_hosts={ps_hosts}", f"--worker_hosts={worker_hosts}",
-                     "--job_name=ps", "--task_index=0", f"--job={job}"])
-                self.job_ps_process[job] = proc
-
-            except Exception as err:
-                self.log(f"Error: {err}")
-
-        elif command == Command.STOP_PS:
-            try:
-                job = tokens[1]
-
-                self.log(f"Killing PS for job={job}")
-                self.delete_old_checkpoints(job)
-                job_proc = self.job_ps_process[job]
-                job_proc.terminate()
-                self.job_ps_process.pop(job)
-                self.log(f"Killed PS for job={job}")
-
-            except Exception as err:
-                self.log(f"Error: {err}")
 
         elif command == Command.POLL:
             try:
@@ -137,11 +116,21 @@ class WorkerDaemon(Daemon):
             except Exception as err:
                 self.log(f"Error: {err}")
 
+        elif command == Command.CLEAN:
+
+            try:
+                job = tokens[1]
+                self.delete_directory_contents(f'checkpoints/{job}')
+
+            except Exception as err:
+                self.log(f"Error: {err}")
+
+
         elif command == Command.RESET:
             try:
-                self.terminate_parameter_servers()
+                # self.terminate_parameter_servers()
                 # Terminate workers
-                os.system("kill -9 `ps -ef | grep task2.py | awk '{print $2}'`")
+                os.system("kill -9 `ps -ef | grep task3.py | awk '{print $2}'`")
                 self.delete_directory_contents('checkpoints')
                 self.delete_directory_contents('log_folder')
                 self.delete_directory_contents('loss_folder')
@@ -167,7 +156,7 @@ class WorkerDaemon(Daemon):
     # TODO: Download `checkpoint` and `.meta` files from prev worker.
     # Reads checkpoint file and downloads appropriate .index file from PS.
     # TODO: don't download checkpoint and .meta if prev_worker is current worker?
-    def download_train_files(self, job, ps_host, prev_worker_host):
+    def download_train_files(self, job, prev_worker_host):
 
         # If this is the first worker running a job, we don't need to download
         # any files.
@@ -199,11 +188,28 @@ class WorkerDaemon(Daemon):
             if not self.same_node(prev_worker):
                 self.download_checkpoint_files(job, prev_worker, [meta])
 
-    def download_latest_model(self, job, ps_hosts):
+    # def download_latest_model(self, job, ps_hosts):
+    #     # Download 'latest_model_{jobName}.ckpt' .index and .data files.
+    #     fnames = [f"latest_model_{job}.ckpt.index", f"latest_model_{job}.ckpt.data-00000-of-00001"]
+    #     ps_host = ps_hosts.split(":")[0]
+    #     self.download_checkpoint_files(job, ps_host, fnames)
+
+    def download_latest_model(self, job, prev_worker_host):
+        if prev_worker_host == "None":
+            return
+        if self.same_node(prev_worker_host):
+            return
         # Download 'latest_model_{jobName}.ckpt' .index and .data files.
-        fnames = [f"latest_model_{job}.ckpt.index", f"latest_model_{job}.ckpt.data-00000-of-00001"]
-        ps_host = ps_hosts.split(":")[0]
-        self.download_checkpoint_files(job, ps_host, fnames)
+        fnames = [
+            f"latest_model_{job}.ckpt.index",
+            f"latest_model_{job}.ckpt.meta",
+            f"latest_model_{job}.ckpt.data-00000-of-00001"]
+
+        # Download files.
+        self.download_checkpoint_files(job, prev_worker_host, fnames)
+
+        # Delete from prev worker.
+        self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
 
     def download_checkpoint_files(self, job, host, fnames):
         self.log(f"Downloading {fnames} from {host}")
@@ -218,16 +224,7 @@ class WorkerDaemon(Daemon):
                 ftp.retrbinary(f'RETR {fname}', fp.write)
         self.log(f"Downloaded {fnames} from {host}.")
 
-
-    def terminate_parameter_servers(self):
-        self.log(f"Killing {len(self.job_ps_process)} PS processes.")
-        for job, ps_proc in self.job_ps_process.items():
-            self.log(f"Killing PS for {job}")
-            ps_proc.terminate()
-        self.job_ps_process = {}
-
     def cleanup(self, signal, frame):
-        self.terminate_parameter_servers()
         self.sock.close()
         self.log("Exiting.")
         sys.exit(0)

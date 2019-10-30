@@ -52,12 +52,11 @@ class WorkerClient(Client):
             raise Exception("Currently assigned to a job.")
         self.job = job
 
-        ps_host = self.job.ps.tf_addr(self.job)
         prev_worker_host = None
         if self.job.prev_worker:
-            prev_worker_host = self.job.prev_worker.tf_addr()
+            prev_worker_host = self.job.prev_worker.host
 
-        command = f"{Command.TRAIN.value} {job.job_name} {ps_host} {self.tf_addr()} {prev_worker_host}"
+        command = f"{Command.TRAIN.value} {job.job_name} {self.host} {prev_worker_host}"
         print(command)
         return self.send(command)
 
@@ -65,8 +64,12 @@ class WorkerClient(Client):
         if self.job:
             raise Exception("Currently assigned to a job.")
         self.job = job
-        ps_host = self.job.ps.tf_addr(self.job)
-        command = f"{Command.VALIDATE.value} {job.job_name} {ps_host} {self.tf_addr()}"
+
+        prev_worker_host = None
+        if self.job.prev_worker:
+            prev_worker_host = self.job.prev_worker.host
+
+        command = f"{Command.VALIDATE.value} {job.job_name} {self.host} {prev_worker_host}"
         print(command)
         return self.send(command)
 
@@ -74,13 +77,19 @@ class WorkerClient(Client):
         if self.job:
             raise Exception("Currently assigned to a job.")
         self.job = job
-        ps_host = self.job.ps.tf_addr(self.job)
-        command = f"{Command.TEST.value} {job.job_name} {ps_host} {self.tf_addr()}"
+
+        prev_worker_host = None
+        if self.job.prev_worker:
+            prev_worker_host = self.job.prev_worker.host
+
+        command = f"{Command.TEST.value} {job.job_name} {self.host} {prev_worker_host}"
         print(command)
         return self.send(command)
 
-    def tf_addr(self):
-        return f"{self.host}:2222"
+    def clean(self, job):
+        command = f"{Command.CLEAN.value} {job.job_name}"
+        print(command)
+        return self.sendRecv(command)
 
     def __repr__(self):
 
@@ -89,50 +98,3 @@ class WorkerClient(Client):
             job = self.job.job_name
         
         return f"({self.host}: {job})"
-
-class ParameterServerClient(Client):
-
-    def __init__(self, address_str, max_jobs=5):
-        Client.__init__(self, address_str)
-
-        self.max_jobs = max_jobs
-        
-        # Keeps track of jobs using this node as a PS and their ports.
-        self.job_ports = {}
-
-    def start_ps(self, job, worker):
-        self.allocate_job(job)
-        command = f"{Command.START_PS.value} {job.job_name} {self.tf_addr(job)} {worker.tf_addr()}"
-        print(command)
-        return self.send(command)
-
-    # TODO: Maybe consider if this needs to use sendRecv?
-    def stop_ps(self, job):
-        self.deallocate_job(job)
-        return self.sendRecv(f"{Command.STOP_PS.value} {job.job_name}")
-
-    def tf_addr(self, job):
-        return f"{self.host}:{self.job_ports[job]}"
-
-    def allocate_job(self, job):
-        if len(self.job_ports) >= self.max_jobs:
-            raise Exception("Too many jobs running on PS.")
-
-        used_ports = set(self.job_ports.values())
-        for port in range(2222, 3333):
-            if port not in used_ports:
-                self.job_ports[job] = port
-                return
-
-        raise Exception("Could not allocate port.")
-
-    def deallocate_job(self, job):
-        self.job_ports.pop(job)
-
-    def can_allocate_job(self):
-        return len(self.job_ports) <= self.max_jobs
-
-    def __repr__(self):
-        jobs = [f"<{port}: {job.job_name}>" for job, port in self.job_ports.items()]
-        jobs_str = ", ".join(jobs)
-        return f"({self.host}: [{jobs_str}])"

@@ -8,7 +8,7 @@ from enum import Enum
 import os
 
 from constants import Command, Status, Event
-from clients import WorkerClient, ParameterServerClient
+from clients import WorkerClient
 
 class Mode(Enum):
     TRAINING = "Training"
@@ -16,18 +16,14 @@ class Mode(Enum):
     TESTING = "Testing"
 
 # THESE MUST BE IPV4 ADDRESSES IN ORDER FOR FTP SERVER TO WORK.
-PS_HOSTS = [
-    '52.90.16.197',
-    '3.91.26.174',
-]
 
 WORKER_HOSTS = [
     '54.172.145.68',
     '3.91.26.160',
     '18.234.228.46',
+    '52.90.16.197',
+    '3.91.26.174',
 ]
-
-PS_MAX_JOBS = 5
 
 class Job:
     def __init__(self, job_name="default", epochs=3):
@@ -39,7 +35,6 @@ class Job:
 
         self.worker = None
         self.prev_worker = None
-        self.ps = None
 
     def assign_to(self, worker):
         self.prev_worker = self.worker
@@ -55,15 +50,13 @@ class Job:
         return f"({self.job_name}, epoch {self.curr_epoch + 1} of {self.epochs})"
 
 
-NUM_JOBS = 6
+NUM_JOBS = 25
 NUM_EPOCHS_LO = 25 # will be 25
 NUM_EPOCHS_HI = 30 # will be 30
 
 class Scheduler:
 
-    def __init__(self, ps_hosts, worker_hosts, jobs=None):
-        self.parameter_servers = [
-            ParameterServerClient(f"{ps_host}:8888", max_jobs=PS_MAX_JOBS) for ps_host in ps_hosts]
+    def __init__(self, worker_hosts, jobs=None):
         self.workers = [
             WorkerClient(f"{worker_host}:8888") for worker_host in worker_hosts]
 
@@ -77,14 +70,7 @@ class Scheduler:
             self.jobs = [
                 Job(job_name=f"job_{i}", epochs=get_num_epochs()) for i in range(NUM_JOBS)]
 
-        self.job_val_accs = {job: [] for job in self.jobs}
-
-        # Assign parameter servers to jobs. Important! These should never change.
-        for i, job in enumerate(self.jobs):
-            job.ps = self.parameter_servers[i % len(self.parameter_servers)]
-
-        # self.pending_jobs = deque(self.jobs)
-        # self.currently_training_jobs = set()
+        # self.job_val_accs = {job: [] for job in self.jobs}
 
         self.warnings = []
 
@@ -93,9 +79,7 @@ class Scheduler:
 
         '''
         Invariants to keep in mind
-            - need to limit number of jobs on a PS < 10 (8 to be safe)
             - job can only be running on 1 worker at a time
-            - jobs need to be assigned to PS before being assigned to worker
         '''
         self.log(f"===== Beginning {mode.value}.")
 
@@ -114,8 +98,6 @@ class Scheduler:
                 tab = "\t\t\t"
                 message = "\n".join([
                     "",
-                    f"{tab}Parameter servers:",
-                    f"{tab}\t{self.parameter_servers}",
                     f"{tab}Workers:",
                     f"{tab}\t{self.workers}",
                     f"{tab}Running jobs:",
@@ -133,7 +115,7 @@ class Scheduler:
                     pass
 
                 elif status == Status.FREE:
-                    # self.log(f"Worker_{worker_id} is {status}")
+
                     ## Cleanup current job on the worker if assigned.
                     if worker.job:
                         
@@ -149,8 +131,6 @@ class Scheduler:
                             self.warnings.append(warning)
 
                         
-                        # Stop PS for prev job
-                        prev_job.ps.stop_ps(prev_job)
 
                         # Remove from set of currently training jobs
                         currently_running.remove(prev_job)
@@ -172,12 +152,10 @@ class Scheduler:
                         job = job_queue.popleft()
                         job_queue.append(job)
 
-                        if job not in currently_running and job.ps.can_allocate_job():
+                        if job not in currently_running:
                             self.log(f"Assigning {job} to Worker_{worker_id}")
                             job.assign_to(worker)
                             currently_running.add(job)
-
-                            job.ps.start_ps(job, worker)
 
                             if mode == Mode.TRAINING:
                                 worker.train(job)
@@ -200,12 +178,10 @@ class Scheduler:
     def test(self):
         self.run(mode=Mode.TESTING)
 
-    # Reset all workers and parameter servers.
+    # Reset all workers.
     def reset_nodes(self):
         for worker in self.workers:
             worker.reset()
-        for ps in self.parameter_servers:
-            ps.reset()
 
     def log(self, s):
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:", end=" ")
@@ -213,9 +189,10 @@ class Scheduler:
 
     # Download worker logs and test accuracy / loss
     def download_logs(self):
+        self.log("Downloading worker logs and test results.")
         for worker_id, worker in enumerate(self.workers):
 
-            if os.environ['PUBLIC_IP'] and os.environ['PUBLIC_IP'] == worker.host:
+            if 'PUBLIC_IP' in os.environ and os.environ['PUBLIC_IP'] == worker.host:
                 continue
 
             with FTP(worker.host, user="checkpoints", passwd="test") as ftp:
@@ -239,6 +216,7 @@ class Scheduler:
                     self.create_dir(path)
                     with open(path, 'wb') as fp:
                         ftp.retrbinary(f'RETR {path}', fp.write)
+        self.log("Finished downloading.")
 
     def create_dir(self, path):
         if not os.path.exists(os.path.dirname(path)):
@@ -254,10 +232,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Master.')
     args = parser.parse_args()
 
-    scheduler = Scheduler(PS_HOSTS, WORKER_HOSTS)
+    scheduler = Scheduler(WORKER_HOSTS)
 
     scheduler.train()
-    scheduler.validate()
+    # scheduler.validate()
     scheduler.test()
 
     scheduler.download_logs()
