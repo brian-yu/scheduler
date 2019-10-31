@@ -48,10 +48,12 @@ def main(_):
 
 
 
-    train_folder = create_folder_get_path(f"checkpoints/{j_name}")
-    create_folder_get_path("log_folder")
-    create_folder_get_path("accuracy_folder")
-    create_folder_get_path("loss_folder")
+    # train_folder = create_folder_get_path(f"checkpoints/{j_name}")
+    # create_folder_get_path("log_folder")
+    # create_folder_get_path("accuracy_folder")
+    # create_folder_get_path("loss_folder")
+
+    train_folder = f"checkpoints/{j_name}"
 
     
     # Create a cluster from the parameter server and worker hosts.

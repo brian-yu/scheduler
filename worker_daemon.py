@@ -27,6 +27,10 @@ class WorkerDaemon(Daemon):
 
         self.logger = Logger()
 
+        self.create_dir("log_folder")
+        self.create_dir("loss_folder")
+        self.create_dir("accuracy_folder")
+
     def receive(self, message):
         tokens = message.split()
         if not tokens:
@@ -46,6 +50,9 @@ class WorkerDaemon(Daemon):
                 job, executable, worker_host, prev_worker_host = tokens[1:]
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
+
+                self.create_dir(f"checkpoints/{job}")
+
                 self.log(f"Training job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
                 '''
                 For timing, maybe have task2.py log times in ./log_folder/times.txt.
