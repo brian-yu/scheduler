@@ -181,6 +181,10 @@ def evaluate(data_source):
             # print(torch.sum(res).item() / targets.shape[0])
             # print()
             total_correct += torch.sum(res).item()
+            if total_correct > total_seen:
+                print(total_correct)
+                print(total_seen)
+                raise Exception("WTF")
             total_seen += res.shape[0]
             total_loss += len(data) * criterion(output_flat, targets).item()
     print("Accuracy: ", total_correct / (len(data_source) - 1))
