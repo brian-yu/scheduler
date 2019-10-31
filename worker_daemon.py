@@ -69,45 +69,25 @@ class WorkerDaemon(Daemon):
                 with self.worker_status_lock:
                     self.worker_status = Status.FREE
 
-        elif command == Command.VALIDATE:
+        # elif command == Command.TEST:
 
-            try:
-                job, executable, worker_host, prev_worker_host = tokens[1:]
-                with self.worker_status_lock:
-                    self.worker_status = Status.BUSY
-                # self.log(f"Validating job={job}, worker_host={worker_host}")
-                self.log(f"Validating job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
+        #     try:
+        #         job, executable, worker_host, prev_worker_host = tokens[1:]
+        #         with self.worker_status_lock:
+        #             self.worker_status = Status.BUSY
+        #         # self.log(f"Testing job={job}, worker_hosts={worker_hosts}")
+        #         self.log(f"Testing job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
 
-                # Transfer model files to current host.
-                self.transfer_job_files(job, prev_worker_host)
+        #         # Transfer model files to current host.
+        #         self.transfer_job_files(job, prev_worker_host)
 
-                os.system(f"python3 jobs/{executable} --job={job} --validate")
-                self.log("Validation finished.")
-            except Exception as err:
-                self.log(f"Error: {err}")
-            finally:
-                with self.worker_status_lock:
-                    self.worker_status = Status.FREE
-
-        elif command == Command.TEST:
-
-            try:
-                job, executable, worker_host, prev_worker_host = tokens[1:]
-                with self.worker_status_lock:
-                    self.worker_status = Status.BUSY
-                # self.log(f"Testing job={job}, worker_hosts={worker_hosts}")
-                self.log(f"Testing job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
-
-                # Transfer model files to current host.
-                self.transfer_job_files(job, prev_worker_host)
-
-                os.system(f"python3 jobs/{executable} --job={job} --test")
-                self.log("Testing finished.")
-            except Exception as err:
-                self.log(f"Error: {err}")
-            finally:
-                with self.worker_status_lock:
-                    self.worker_status = Status.FREE
+        #         os.system(f"python3 jobs/{executable} --job={job} --test")
+        #         self.log("Testing finished.")
+        #     except Exception as err:
+        #         self.log(f"Error: {err}")
+        #     finally:
+        #         with self.worker_status_lock:
+        #             self.worker_status = Status.FREE
 
         elif command == Command.POLL:
             try:

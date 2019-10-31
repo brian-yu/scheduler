@@ -1,15 +1,5 @@
 version: '3'
 services:
-  # daemon:
-  #   build: .
-  #   container_name: daemon
-  #   volumes:
-  #     - /home/ubuntu/scheduler:/root
-  #   network_mode: "host"
-  #   command: python3 -u worker_daemon.py --port=8888
-  #   environment:
-  #     PUBLIC_IP: ${PUBLIC_IP}
-
   ftp:
     image: stilliard/pure-ftpd:hardened
     container_name: ftp

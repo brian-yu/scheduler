@@ -38,7 +38,6 @@ class Daemon:
         sock.send(message.encode())
         reply = sock.recv(1024).decode()
         sock.close()
-        # print(f"{message} -> {reply}")
         return reply
 
     def handleClient(self, connection):

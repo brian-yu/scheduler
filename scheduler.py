@@ -218,11 +218,11 @@ class Scheduler:
                         ftp.retrbinary(f'RETR {path}', fp.write)
         self.log("Finished downloading.")
 
-NUM_JOBS = 7
-NUM_EPOCHS_LO = 2 # will be 25
-NUM_EPOCHS_HI = 2 # will be 30
+NUM_CV_JOBS = 6
+NUM_EPOCHS_LO = 4 # will be 25
+NUM_EPOCHS_HI = 6 # will be 30
 
-get_num_epochs = lambda: random.randint(NUM_EPOCHS_LO, NUM_EPOCHS_HI)
+get_num_epochs = lambda lo, hi: random.randint(lo, hi)
 
 if __name__ == "__main__":
 
@@ -230,19 +230,24 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    job_exec = "lstm_seq2seq.py"
+    # job_exec = "lstm_seq2seq.py"
     # job_exec = "alexnet.py"
     jobs = []
-    for i in range(NUM_JOBS):
-        jobs.append(Job(job_name=f"job_{i}", epochs=get_num_epochs(), executable=job_exec))
+    for i in range(NUM_CV_JOBS):
+        jobs.append(
+            Job(job_name=f"job_{i}", epochs=get_num_epochs(25, 30), executable='alexnet.py'))
+    for i in range(NUM_CV_JOBS*3):
+        jobs.append(
+            Job(job_name=f"job_{i}", epochs=get_num_epochs(80, 100), executable='lstm_seq2seq.py'))
+    random.shuffle(jobs)
 
     scheduler = Scheduler(WORKER_HOSTS, jobs = jobs)
 
     scheduler.train()
-    scheduler.test()
+    # scheduler.test()
 
     scheduler.download_logs()
 
-
+    print("Warnings:")
     for warning in scheduler.warnings:
-        print(warning)
+        print(f"\t{warning}")

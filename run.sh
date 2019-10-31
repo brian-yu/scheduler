@@ -1,7 +1,6 @@
-# docker run --network host --name daemon -it -v /home/ubuntu/scheduler:/root daemon python3 worker_daemon.py --port=8888
-
-
+# Shutdown currently running FTP server.
 docker-compose down
+# Start FTP server in background.
 docker-compose up -d
 
 python3 worker_daemon.py --port=8888

@@ -18,7 +18,7 @@ sudo apt-get install -y --no-install-recommends \
     libcudnn7-dev=7.6.2.24-1+cuda10.0
 
 
-# clean up stuff
+# clean up .deb files
 sudo rm cuda-repo-ubuntu1804_10.0.130-1_amd64.deb
 sudo rm nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
 
@@ -31,10 +31,15 @@ pip3 install opencv-python
 pip3 install scipy
 pip3 install scikit-learn
 pip3 install keras
+
+# VERY important. Install numpy 1.16.2
 pip3 uninstall --yes numpy
 pip3 install numpy==1.16.2
 
 ## Set env vars
+# PUBLIC_IP is very important and is used by the worker_daemon to find out the machine's
+# public IP. It is also used by docker-compose.yml to tell the FTP server what host to
+# bind to.
 export PUBLIC_DNS_NAME=`curl -s http://169.254.169.254/latest/meta-data/public-hostname`
 export PUBLIC_IP=`curl http://169.254.169.254/latest/meta-data/public-ipv4`
 
@@ -46,6 +51,7 @@ sudo addgroup --system docker
 sudo adduser $USER docker
 newgrp docker
 
+# You may still have to run this command separately.
 sudo snap install docker
 # sudo setfacl -m user:$USER:rw /var/run/docker.sock
 
