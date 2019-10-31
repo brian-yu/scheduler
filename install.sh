@@ -31,8 +31,9 @@ pip3 install opencv-python
 pip3 install scipy
 pip3 install scikit-learn
 pip3 install keras
+pip3 install torch torchvision
 
-# VERY important. Install numpy 1.16.2
+# VERY important for our alexnet job. Install numpy 1.16.2
 pip3 uninstall --yes numpy
 pip3 install numpy==1.16.2
 
