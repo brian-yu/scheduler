@@ -234,11 +234,18 @@ if __name__ == "__main__":
     # job_exec = "alexnet.py"
     jobs = []
     for i in range(NUM_CV_JOBS):
+        job_id = len(jobs)
         jobs.append(
-            Job(job_name=f"job_{i}", epochs=get_num_epochs(25, 30), executable='alexnet.py'))
+            Job(job_name=f"job_{job_id}",
+                epochs=get_num_epochs(25, 30),
+                executable='alexnet.py'))
+    
     for i in range(NUM_CV_JOBS*3):
+        job_id = len(jobs)
         jobs.append(
-            Job(job_name=f"job_{i}", epochs=get_num_epochs(80, 100), executable='lstm_seq2seq.py'))
+            Job(job_name=f"job_{job_id}",
+                epochs=get_num_epochs(80, 100),
+                executable='lstm_seq2seq.py'))
     random.shuffle(jobs)
 
     scheduler = Scheduler(WORKER_HOSTS, jobs = jobs)
