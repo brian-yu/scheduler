@@ -38,14 +38,12 @@ def create_folder_get_path(relative_path):
 
 def main(_):
 
-
-    logger = Logger()
-
     # ps_hosts = FLAGS.ps_hosts.split(",")
     # worker_hosts = FLAGS.worker_hosts.split(",")
     # train_folder = FLAGS.train_folder
     j_name = FLAGS.job
 
+    logger = Logger(j_name)
 
 
     # train_folder = create_folder_get_path(f"checkpoints/{j_name}")
@@ -126,7 +124,7 @@ def main(_):
     test_y = np.array([i[1] for i in test_data])
 
 
-    logger.log_event_start(j_name, Event.BUILD)
+    logger.log_event_start(Event.BUILD)
 
     #### Build model...
 
@@ -301,7 +299,7 @@ def main(_):
 
     ### End build model
 
-    logger.log_event_end(j_name, Event.BUILD)
+    logger.log_event_end(Event.BUILD)
 
     init = tf.global_variables_initializer()
     acc_list = []
@@ -331,7 +329,7 @@ def main(_):
                 sess.run(init)
 
             print('training')
-            logger.log_event_start(j_name, Event.TRAIN)
+            logger.log_event_start(Event.TRAIN)
 
             for j in range(0, steps - remaining, step_size):
             # for j in range(0, 200, step_size):
@@ -349,12 +347,12 @@ def main(_):
                     with open('./log_folder/' + j_name + '_log', 'a') as f:
                         f.write('\nstep: ' + str(j))
             print('finished training')
-            logger.log_event_end(j_name, Event.TRAIN)
+            logger.log_event_end(Event.TRAIN)
 
-            logger.log_event_start(j_name, Event.SAVE)
+            logger.log_event_start(Event.SAVE)
             saver.save(get_session(sess),
                        train_folder + "/latest_model_" + j_name + ".ckpt")
-            logger.log_event_end(j_name, Event.SAVE)
+            logger.log_event_end(Event.SAVE)
 
     if FLAGS.validate:
         #evaluate the model performance in the current epoch
@@ -404,6 +402,10 @@ def main(_):
             with open('./log_folder/' + j_name + '_log', 'a') as f:
                 f.write("\nAccuracy:" + str(acc_cv_) + "\tLoss:" +
                         str(loss_cv_) + "\tAUC:" + str(auc_cv_))
+
+
+            logger.log_val_acc(acc_cv_)
+            logger.log_val_loss(loss_cv_)
         # with open('')
     #num_epoch += 1
 

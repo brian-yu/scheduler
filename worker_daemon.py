@@ -27,8 +27,6 @@ class WorkerDaemon(Daemon):
         self.worker_status = Status.FREE
         self.worker_status_lock = Lock()
 
-        self.logger = Logger()
-
     def receive(self, message):
         tokens = message.split()
         if not tokens:
@@ -59,12 +57,9 @@ class WorkerDaemon(Daemon):
                 For timing, maybe have task2.py log times in ./log_folder/times.txt.
                 Then the worker daemon will read the times and send salient timing information.
                 '''
-                self.logger.log_event_start(job, Event.DOWNLOAD)
 
                 # Transfer model files to current host.
                 self.transfer_job_files(job, prev_worker_host)
-
-                self.logger.log_event_end(job, Event.DOWNLOAD)
 
                 os.system(f"python3 jobs/{executable} --job={job} --train")
                 self.log("Training finished.")

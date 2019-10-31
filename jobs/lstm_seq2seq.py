@@ -65,6 +65,8 @@ def main(FLAGS):
     job_name = FLAGS.job_name
     checkpoint_dir = f"checkpoints/{job_name}"
 
+    logger = Logger(job_name)
+
 
     batch_size = 64  # Batch size for training.
     epochs = 1 # 100  # Number of epochs to train for.
@@ -176,10 +178,14 @@ def main(FLAGS):
         print(f"Restoring model from {ckpt}")
         model = load_model(ckpt)
 
-    model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
+    history = model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
               batch_size=batch_size,
-              epochs=epochs,
+              epochs=1,
               validation_split=0.2)
+
+    logger.log_val_acc(history.history['val_acc'][-1])
+    logger.log_val_loss(history.history['val_loss'][-1])
+
     # Save model
     model.save(ckpt)
 
