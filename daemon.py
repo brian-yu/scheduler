@@ -16,10 +16,8 @@ class Daemon:
         if port < 1024:
             raise Exception("Cannot use reserved port.")
 
-        # Kill process running on port.
-        os.system(f'kill -9 `sudo lsof -t -i:{port}`')
-
         self.sock = socket(AF_INET, SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.host, self.port))
         self.sock.listen(10)
 
