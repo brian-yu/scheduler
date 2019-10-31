@@ -59,7 +59,7 @@ class WorkerDaemon(Daemon):
                 Then the worker daemon will read the times and send salient timing information.
                 '''
                 self.logger.log_event_start(job, Event.DOWNLOAD)
-                
+
                 # Transfer model files to current host.
                 self.transfer_job_files(job, prev_worker_host)
 
@@ -173,7 +173,7 @@ class WorkerDaemon(Daemon):
         self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
 
     def download_checkpoint_files(self, job, host):
-        self.log(f"Downloading {fnames} from {host}")
+        
 
         checkpoint_dir = os.path.join('checkpoints', job)
         self.create_dir(checkpoint_dir)
@@ -181,12 +181,12 @@ class WorkerDaemon(Daemon):
         ftp = FTP(host, user="checkpoints", passwd="test")
         ftp.cwd(checkpoint_dir)
         files = ftp.nlst()
-        self.log(files)
+        self.log(f"Downloading {files} from {host}.")
         for fname in files:
             path = os.path.join(checkpoint_dir, fname)
             with open(path, 'wb') as fp:
                 ftp.retrbinary(f'RETR {fname}', fp.write)
-        self.log(f"Downloaded {files} from {host}.")
+        self.log(f"Finished downloading.")
 
     def cleanup(self, signal, frame):
         self.sock.close()
