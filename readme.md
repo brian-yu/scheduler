@@ -1,18 +1,15 @@
-# Multithreaded TensorFlow scheduler
+# Distributed deep learning job scheduler
 
 Important files
-- `worker.py`: Runs a socket server that listens for commands and runs training tasks in a thread.
-- `master.py`: Initializes jobs and tasks and decides how to schedule tasks on workers.
-- `ps.py`: Parameter server.
-- `cluster.py`: Contains helper functions that determine port mappings.
+- `worker-daemon.py`: Runs a socket server that listens for commands and runs training tasks in a thread.
+- `scheduler.py`: Initializes jobs and tasks and decides how to schedule tasks on workers.
+- `jobs/`: Deep learning job code.
+- `data/`: Data for training tasks.
 
 ## How to run
 
-0. Create the necessary log directories. `mkdir checkpoints`, `mkdir accuracy_folder`, `mkdir log_folder`, `mkdir loss_folder`.
+0. On each worker, install required dependencies using `./install.sh`.
 
-1. Start the parameter server. `python ps.py 1 2 0` starts 1 parameter server configured to handle 2 workers with the current parameter server being the 0th index.
+1. On each worker, start the FTP server and daemon using `./run.sh`.
 
-2. Start the workers. If you want to start 2 workers that share 1 parameter server, run `python worker.py --num_ps 1 --num_workers 2 --worker_index 0 --listen` and `python worker.py --num_ps 1 --num_workers 2 --worker_index 1 --listen` in separate tabs.
-
-3. Run the master that will coordinate training. `python master.py 2` runs the master configured to communicate with 2 workers.
-
+2. Run `python3 scheduler.py` to begin training.
