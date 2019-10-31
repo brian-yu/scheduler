@@ -81,7 +81,7 @@ def main(args):
 
 
     # Path to the data txt file on disk.
-    data_path = 'data/lstm_seq2seq/'
+    data_path = 'data/datasets/lstm_seq2seq/'
 
     encoder_input_data = np.load(os.path.join(data_path, "encoder_input_data.npy"))
     decoder_input_data = np.load(os.path.join(data_path, "decoder_input_data.npy"))
