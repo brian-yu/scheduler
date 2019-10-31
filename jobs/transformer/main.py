@@ -157,9 +157,15 @@ def evaluate(data_source):
                 hidden = repackage_hidden(hidden)
             output_flat = output.view(-1, ntokens)
             # print(data, targets, output_flat)
-            print("Targets shape", targets[0])
-            print("Output_flat shape", output_flat[0])
-            print(torch.argmax(output_flat) == targets)
+
+            word_weights = output_flat.squeeze().div(1.0).exp()
+            word_idx = torch.multinomial(word_weights, 1)
+            # word_tensor = torch.Tensor([[word_idx]]).long().to(device)
+            print("Targets", targets[0])
+            print("Targets shape", targets.shape)
+            print("word_idx shape", word_idx.shape)
+            print("word_idx", word_idx[0])
+            print(torch.argmin(output_flat) == targets)
             total_loss += len(data) * criterion(output_flat, targets).item()
     return total_loss / (len(data_source) - 1)
 
