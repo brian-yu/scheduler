@@ -218,7 +218,7 @@ class Scheduler:
                         ftp.retrbinary(f'RETR {path}', fp.write)
         self.log("Finished downloading.")
 
-NUM_CV_JOBS = 6
+NUM_CV_JOBS = 7
 NUM_EPOCHS_LO = 4 # will be 25
 NUM_EPOCHS_HI = 6 # will be 30
 
@@ -228,7 +228,8 @@ Epoch recommandations:
 - Alexnet: 25-30
 
 - seq2seq: up to 100
-- Transformer: 40
+- Transformer (transformer/main.py): 40
+- 
 - 
 '''
 
@@ -243,19 +244,26 @@ if __name__ == "__main__":
     # job_exec = "lstm_seq2seq.py"
     # job_exec = "alexnet.py"
     jobs = []
+    # for i in range(NUM_CV_JOBS):
+    #     job_id = len(jobs)
+    #     jobs.append(
+    #         Job(job_name=f"job_{job_id}",
+    #             epochs=get_num_epochs(25, 30),
+    #             executable='alexnet.py'))
+    
+    # for i in range(NUM_CV_JOBS*2):
+    #     job_id = len(jobs)
+    #     jobs.append(
+    #         Job(job_name=f"job_{job_id}",
+    #             epochs=get_num_epochs(80, 100),
+    #             executable='lstm_seq2seq.py'))
+
     for i in range(NUM_CV_JOBS):
         job_id = len(jobs)
         jobs.append(
             Job(job_name=f"job_{job_id}",
-                epochs=get_num_epochs(25, 30),
-                executable='alexnet.py'))
-    
-    for i in range(NUM_CV_JOBS*3):
-        job_id = len(jobs)
-        jobs.append(
-            Job(job_name=f"job_{job_id}",
-                epochs=get_num_epochs(80, 100),
-                executable='lstm_seq2seq.py'))
+                epochs=get_num_epochs(2, 2),
+                executable='transformer/main.py'))
     random.shuffle(jobs)
 
     scheduler = Scheduler(WORKER_HOSTS, jobs = jobs)

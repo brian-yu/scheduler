@@ -53,6 +53,9 @@ parser.add_argument('--onnx-export', type=str, default='',
                     help='path to export the final model in onnx format')
 parser.add_argument('--job', type=str, default='default',
                     help='name of job')
+parser.add_argument('--train', help='whether to train or not', action='store_true')
+parser.add_argument('--validate', help='whether to validate or not', action='store_true')
+parser.add_argument('--test', help='whether to test or not', action='store_true')
 
 parser.add_argument('--nhead', type=int, default=2,
                     help='the number of heads in the encoder/decoder of the transformer model')

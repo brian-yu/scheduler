@@ -61,7 +61,8 @@ class WorkerDaemon(Daemon):
                 # Transfer model files to current host.
                 self.transfer_job_files(job, prev_worker_host)
 
-                os.system(f"python3 jobs/{executable} --job={job} --train")
+                job_path = os.path.join('jobs', 'executable')
+                os.system(f"python3 {job_path} --job={job} --train")
                 self.log("Training finished.")
             except Exception as err:
                 self.log(f"Error: {err}")
