@@ -230,6 +230,13 @@ best_val_loss = None
 try:
     for epoch in range(1, args.epochs+1):
         epoch_start_time = time.time()
+
+        checkpoint_dir = f"checkpoints/{args.job}"
+        ckpt = os.path.join(checkpoint_dir, f"latest_model_{job_name}.pt")
+        if os.path.exists(ckpt):
+            print(f"Restoring model from {ckpt}")
+            model = torch.load(ckpt)
+
         train()
         val_loss, val_acc = evaluate(val_data)
         print('-' * 89)
@@ -244,25 +251,26 @@ try:
         else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
             lr /= 4.0
+        torch.save(model, ckpt)
 except KeyboardInterrupt:
     print('-' * 89)
     print('Exiting from training early')
 
-# Load the best saved model.
-with open(args.save, 'rb') as f:
-    model = torch.load(f)
-    # after load the rnn params are not a continuous chunk of memory
-    # this makes them a continuous chunk, and will speed up forward pass
-    # Currently, only rnn model supports flatten_parameters function.
-    if args.model in ['RNN_TANH', 'RNN_RELU', 'LSTM', 'GRU']:
-        model.rnn.flatten_parameters()
+# # Load the best saved model.
+# with open(args.save, 'rb') as f:
+#     model = torch.load(f)
+#     # after load the rnn params are not a continuous chunk of memory
+#     # this makes them a continuous chunk, and will speed up forward pass
+#     # Currently, only rnn model supports flatten_parameters function.
+#     if args.model in ['RNN_TANH', 'RNN_RELU', 'LSTM', 'GRU']:
+#         model.rnn.flatten_parameters()
 
-# Run on test data.
-test_loss, test_acc = evaluate(test_data)
-print('=' * 89)
-print('| End of training | test acc {:5.2f} | test loss {:5.2f} | test ppl {:8.2f}'.format(test_acc, test_loss, math.exp(test_loss)))
-print('=' * 89)
+# # Run on test data.
+# test_loss, test_acc = evaluate(test_data)
+# print('=' * 89)
+# print('| End of training | test acc {:5.2f} | test loss {:5.2f} | test ppl {:8.2f}'.format(test_acc, test_loss, math.exp(test_loss)))
+# print('=' * 89)
 
-if len(args.onnx_export) > 0:
-    # Export the model in ONNX format.
-    export_onnx(args.onnx_export, batch_size=1, seq_len=args.bptt)
+# if len(args.onnx_export) > 0:
+#     # Export the model in ONNX format.
+#     export_onnx(args.onnx_export, batch_size=1, seq_len=args.bptt)
