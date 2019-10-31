@@ -187,6 +187,7 @@ def main(args):
               epochs=1,
               validation_split=0.2)
 
+    print(history.history.keys())
     logger.log_val_acc(history.history['val_acc'][-1])
     logger.log_val_loss(history.history['val_loss'][-1])
 
