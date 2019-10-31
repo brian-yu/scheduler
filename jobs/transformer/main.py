@@ -250,6 +250,8 @@ def export_onnx(path, batch_size, seq_len):
 lr = args.lr
 best_val_loss = None
 
+logger = Logger(args.job)
+
 # At any point you can hit Ctrl + C to break out of training early.
 try:
     for epoch in range(1, args.epochs+1):
@@ -263,6 +265,8 @@ try:
 
         train()
         val_loss, val_acc = evaluate(val_data)
+        logger.log_val_acc(val_acc)
+        logger.log_val_loss(val_loss)
         print('-' * 89)
         print('| end of epoch {:3d} | time: {:5.2f}s | valid acc {:5.2f} | valid loss {:5.2f} | '
                 'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time), val_acc, val_loss, math.exp(val_loss)))
