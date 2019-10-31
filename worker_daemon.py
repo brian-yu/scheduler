@@ -160,76 +160,39 @@ class WorkerDaemon(Daemon):
             except Exception as e:
                 print(e)
 
-    # TODO: Download `checkpoint` and `.meta` files from prev worker.
-    # Reads checkpoint file and downloads appropriate .index file from PS.
-    # TODO: don't download checkpoint and .meta if prev_worker is current worker?
-    def download_train_files(self, job, prev_worker_host):
-
-        # If this is the first worker running a job, we don't need to download
-        # any files.
-        if prev_worker_host == "None":
-            return
-
-        ps = self.hostname(ps_host)
-        prev_worker = self.hostname(prev_worker_host)
-
-        # Need to download checkpoint file first, so that we can read it 
-        # and determine which .index file to download from the PS and which .meta
-        # file to download.
-        self.log(f"Same as previous worker? {self.same_node(prev_worker)}")
-        if not self.same_node(prev_worker):
-            fnames = ['checkpoint']
-            self.download_checkpoint_files(job, prev_worker, fnames)
-
-        # Download .index file from PS and .meta file from prev worker.
-        with open(f"checkpoints/{job}/checkpoint") as f:
-            full_path = f.readline().rstrip("\n").rstrip("\"").split(":")[1]
-            self.log(f"CKPT_PATH={full_path}")
-            ckpt = full_path.split("/")[-1]
-            self.log(f"CKPT_FILE={ckpt}")
-            index = f"{ckpt}.index"
-            meta = f"{ckpt}.meta"
-            # Download .index file from ps
-            self.download_checkpoint_files(job, ps, [index])
-            # Download .meta file from prev_worker
-            if not self.same_node(prev_worker):
-                self.download_checkpoint_files(job, prev_worker, [meta])
-
-    # def download_latest_model(self, job, ps_hosts):
-    #     # Download 'latest_model_{jobName}.ckpt' .index and .data files.
-    #     fnames = [f"latest_model_{job}.ckpt.index", f"latest_model_{job}.ckpt.data-00000-of-00001"]
-    #     ps_host = ps_hosts.split(":")[0]
-    #     self.download_checkpoint_files(job, ps_host, fnames)
-
+    # Download all files in checkpoint folder from prev_host.
     def download_latest_model(self, job, prev_worker_host):
         if prev_worker_host == "None":
             return
         if self.same_node(prev_worker_host):
             return
         # Download 'latest_model_{jobName}.ckpt' .index and .data files.
-        fnames = [
-            f"latest_model_{job}.ckpt.index",
-            f"latest_model_{job}.ckpt.meta",
-            f"latest_model_{job}.ckpt.data-00000-of-00001"]
+        # fnames = [
+        #     f"latest_model_{job}.ckpt.index",
+        #     f"latest_model_{job}.ckpt.meta",
+        #     f"latest_model_{job}.ckpt.data-00000-of-00001"]
 
         # Download files.
-        self.download_checkpoint_files(job, prev_worker_host, fnames)
+        self.download_checkpoint_files(job, prev_worker_host)
 
         # Delete from prev worker.
         self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
 
-    def download_checkpoint_files(self, job, host, fnames):
+    def download_checkpoint_files(self, job, host):
         self.log(f"Downloading {fnames} from {host}")
+
+        checkpoint_dir = os.path.join('checkpoints', job)
+        self.create_dir(checkpoint_dir)
+
         ftp = FTP(host, user="checkpoints", passwd="test")
-        ftp.cwd(os.path.join('checkpoints', job))
-        with self.print_lock:
-            ftp.dir()
-        for fname in fnames:
-            path = f'checkpoints/{job}/{fname}'
-            self.create_dir(path)
+        ftp.cwd(checkpoint_dir)
+        files = ftp.nlst()
+        self.log(files)
+        for fname in files:
+            path = os.path.join(checkpoint_dir, fname)
             with open(path, 'wb') as fp:
                 ftp.retrbinary(f'RETR {fname}', fp.write)
-        self.log(f"Downloaded {fnames} from {host}.")
+        self.log(f"Downloaded {files} from {host}.")
 
     def cleanup(self, signal, frame):
         self.sock.close()
