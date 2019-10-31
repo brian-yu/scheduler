@@ -63,7 +63,7 @@ from constants import Event, Logger
 
 def main(args):
 
-    job_name = args.job_name
+    job_name = args.job
     checkpoint_dir = f"checkpoints/{job_name}"
 
     logger = Logger(job_name)
