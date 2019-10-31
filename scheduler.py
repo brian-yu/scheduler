@@ -231,6 +231,7 @@ if __name__ == "__main__":
 
 
     job_exec = "lstm_seq2seq.py"
+    # job_exec = "alexnet.py"
     jobs = []
     for i in range(NUM_JOBS):
         jobs.append(Job(job_name=f"job_{i}", epochs=get_num_epochs(), executable=job_exec))
@@ -238,7 +239,6 @@ if __name__ == "__main__":
     scheduler = Scheduler(WORKER_HOSTS, jobs = jobs)
 
     scheduler.train()
-    # scheduler.validate()
     scheduler.test()
 
     scheduler.download_logs()

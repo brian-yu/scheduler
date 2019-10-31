@@ -56,6 +56,7 @@ from keras.layers import Input, LSTM, Dense
 import numpy as np
 import os
 import zipfile
+import sys
 
 sys.path.append('.') # append directory with constants.py to path
 from constants import Event, Logger
