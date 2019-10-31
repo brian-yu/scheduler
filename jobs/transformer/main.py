@@ -154,42 +154,19 @@ def evaluate(data_source):
             data, targets = get_batch(data_source, i)
             if args.model == 'Transformer':
                 output = model(data)
+                word_weights = output_flat.squeeze().div(1.0).exp()
+                word_idx = torch.flatten(torch.multinomial(word_weights, 1))
             else:
                 output, hidden = model(data, hidden)
                 hidden = repackage_hidden(hidden)
-            output_flat = output.view(-1, ntokens)
-            # print(data, targets, output_flat)
+                word_weights = output.squeeze().div(args.temperature).exp().cpu()
+                word_idx = torch.multinomial(word_weights, 1)[0]
 
-            word_weights = output_flat.squeeze().div(1.0).exp()
-            word_idx = torch.flatten(torch.multinomial(word_weights, 1))
-            # word_tensor = torch.Tensor([[word_idx]]).long().to(device)
-            # print("Targets", targets[0])
-            # print("Targets shape", targets.shape)
-            # print("word_idx shape", word_idx.shape)
-            # print("word_idx", word_idx[0])
-            # print(word_idx == targets)
+            output_flat = output.view(-1, ntokens)
+
             res = (word_idx == targets)
-            # total_correct += 
-            # print('targets')
-            # print(targets.shape)
-            # print(targets.shape[0])
-            # print('word_idx')
-            # print(word_idx.shape)
-            # print(word_idx.shape[0])
-            # print('res')
-            # print(res.shape)
-            # print(torch.sum(res).item() / targets.shape[0])
-            # print()
             total_correct += torch.sum(res).item()
             total_seen += res.shape[0]
-            if torch.sum(res).item() > res.shape[0]:
-                print(torch.sum(res).item())
-                print(res.shape[0])
-                raise Exception("WTF")
-            if total_correct > total_seen:
-                print(total_correct)
-                print(total_seen)
-                raise Exception("WTF")
             total_loss += len(data) * criterion(output_flat, targets).item()
     print("Accuracy: ", total_correct / total_seen)
     return (total_loss / (len(data_source) - 1), total_correct / total_seen)
@@ -254,9 +231,8 @@ try:
         train()
         val_loss, val_acc = evaluate(val_data)
         print('-' * 89)
-        print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
-                'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
-                                           val_loss, math.exp(val_loss)))
+        print('| end of epoch {:3d} | time: {:5.2f}s | valid acc {:5.2f} | valid loss {:5.2f} | '
+                'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time), val_acc, val_loss, math.exp(val_loss)))
         print('-' * 89)
         # Save the model if the validation loss is the best we've seen so far.
         if not best_val_loss or val_loss < best_val_loss:
