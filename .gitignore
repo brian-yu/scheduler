@@ -1,5 +1,6 @@
 __pycache__/
-datasets/
+# datasets/
+data/
 log_folder/*
 loss_folder/*
 accuracy_folder/*

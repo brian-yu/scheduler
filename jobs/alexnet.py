@@ -8,7 +8,7 @@ import tensorflow as tf
 import numpy as np
 import sys 
 
-sys.path.append('.')
+sys.path.append('.') # append directory with constants.py to path
 from constants import Event, Logger
 
 FLAGS = None
@@ -90,14 +90,14 @@ def main(_):
     print(TRAIN_DIR)  # current working directory
 
     #Unzipping file
-    with zipfile.ZipFile("datasets.zip", "r") as zip_ref:
-        zip_ref.extractall()
+    with zipfile.ZipFile("datasets/alexnet.zip", "r") as zip_ref:
+        zip_ref.extractall('data')
 
     #Reading .npy files
     train_data = np.load(
-        os.path.join(os.getcwd(), 'datasets', 'train_data_mc.npy'))
+        os.path.join(os.getcwd(), 'data/', 'train_data_mc.npy'))
     test_data = np.load(
-        os.path.join(os.getcwd(), 'datasets', 'test_data_mc.npy'))
+        os.path.join(os.getcwd(), 'data/', 'test_data_mc.npy'))
 
     #In order to implement ALEXNET, we are resizing them to (227,227,3)
     for i in range(len(train_data)):
