@@ -7,6 +7,8 @@ import zipfile
 import tensorflow as tf
 import numpy as np
 
+import sys 
+sys.path.append('..')
 from constants import Event, Logger
 
 FLAGS = None
