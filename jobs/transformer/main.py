@@ -232,7 +232,7 @@ try:
         epoch_start_time = time.time()
 
         checkpoint_dir = f"checkpoints/{args.job}"
-        ckpt = os.path.join(checkpoint_dir, f"latest_model_{job_name}.pt")
+        ckpt = os.path.join(checkpoint_dir, f"latest_model_{args.job}.pt")
         if os.path.exists(ckpt):
             print(f"Restoring model from {ckpt}")
             model = torch.load(ckpt)
