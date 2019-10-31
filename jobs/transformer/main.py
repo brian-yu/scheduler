@@ -154,21 +154,23 @@ def evaluate(data_source):
             data, targets = get_batch(data_source, i)
             if args.model == 'Transformer':
                 output = model(data)
-                word_weights = output_flat.squeeze().div(1.0).exp()
-                word_idx = torch.flatten(torch.multinomial(word_weights, 1))
             else:
                 output, hidden = model(data, hidden)
                 hidden = repackage_hidden(hidden)
+                
+            output_flat = output.view(-1, ntokens)
+
+            if args.model == 'Transformer':
+                word_weights = output_flat.squeeze().div(1.0).exp()
+                word_idx = torch.flatten(torch.multinomial(word_weights, 1))
+            else:
                 word_weights = output.squeeze().div(args.temperature).exp().cpu()
                 word_idx = torch.multinomial(word_weights, 1)[0]
-
-            output_flat = output.view(-1, ntokens)
 
             res = (word_idx == targets)
             total_correct += torch.sum(res).item()
             total_seen += res.shape[0]
             total_loss += len(data) * criterion(output_flat, targets).item()
-    print("Accuracy: ", total_correct / total_seen)
     return (total_loss / (len(data_source) - 1), total_correct / total_seen)
 
 
@@ -258,8 +260,7 @@ with open(args.save, 'rb') as f:
 # Run on test data.
 test_loss, test_acc = evaluate(test_data)
 print('=' * 89)
-print('| End of training | test loss {:5.2f} | test ppl {:8.2f}'.format(
-    test_loss, math.exp(test_loss)))
+print('| End of training | test acc {:5.2f} | test loss {:5.2f} | test ppl {:8.2f}'.format(test_acc, test_loss, math.exp(test_loss)))
 print('=' * 89)
 
 if len(args.onnx_export) > 0:
