@@ -166,7 +166,8 @@ def evaluate(data_source):
             print("word_idx shape", word_idx.shape)
             print("word_idx", word_idx[0])
             # print(word_idx == targets)
-            print(torch.sum(word_idx == targets))
+            print(torch.sum(word_idx == targets).data[0] / targets.shape[0])
+            print()
             total_loss += len(data) * criterion(output_flat, targets).item()
     return total_loss / (len(data_source) - 1)
 
