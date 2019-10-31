@@ -145,6 +145,7 @@ def evaluate(data_source):
     model.eval()
     total_loss = 0.
     total_correct = 0
+    total_seen = 0
     ntokens = len(corpus.dictionary)
     if args.model != 'Transformer':
         hidden = model.init_hidden(eval_batch_size)
@@ -180,9 +181,10 @@ def evaluate(data_source):
             # print(torch.sum(res).item() / targets.shape[0])
             # print()
             total_correct += torch.sum(res).item()
+            total_seen += res.shape[0]
             total_loss += len(data) * criterion(output_flat, targets).item()
     print("Accuracy: ", total_correct / (len(data_source) - 1))
-    return (total_loss / (len(data_source) - 1), total_correct / (len(data_source) - 1))
+    return (total_loss / (len(data_source) - 1), total_correct / total_seen)
 
 
 def train():
