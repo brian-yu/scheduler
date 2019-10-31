@@ -70,9 +70,9 @@ device = torch.device("cuda" if use_gpu else "cpu")
 # Load data
 ###############################################################################
 
-data_file = 'datasets/wikitext-2/data.pt'
+data_file = 'data/wikitext-2/data.pt'
 if os.path.exists(data_file):
-    data = torch.load(PATH)
+    data = torch.load(data_file)
     train_data = data['train_data']
     val_data = data['val_data']
     test_data = data['test_data']
@@ -113,7 +113,7 @@ else:
         'train_data': train_data,
         'val_data': val_data,
         'test_data': test_data,
-        }, 'datasets/wikitext-2/data.pt')
+        }, data_file)
 
 
 
