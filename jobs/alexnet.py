@@ -97,9 +97,9 @@ def main(_):
 
     #Reading .npy files
     train_data = np.load(
-        os.path.join(os.getcwd(), 'data/', 'train_data_mc.npy'))
+        os.path.join(os.getcwd(), 'data/datasets', 'train_data_mc.npy'))
     test_data = np.load(
-        os.path.join(os.getcwd(), 'data/', 'test_data_mc.npy'))
+        os.path.join(os.getcwd(), 'data/datasets', 'test_data_mc.npy'))
 
     #In order to implement ALEXNET, we are resizing them to (227,227,3)
     for i in range(len(train_data)):
