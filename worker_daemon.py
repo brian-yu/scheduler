@@ -48,10 +48,10 @@ class WorkerDaemon(Daemon):
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
 
-                self.create_dir(f"checkpoints/{job}")
-                self.create_dir("log_folder")
-                self.create_dir("loss_folder")
-                self.create_dir("accuracy_folder")
+                self.create_dir(f"checkpoints/{job}/")
+                self.create_dir("log_folder/")
+                self.create_dir("loss_folder/")
+                self.create_dir("accuracy_folder/")
 
                 self.log(f"Training job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
                 '''
@@ -240,6 +240,7 @@ class WorkerDaemon(Daemon):
         self.log(f"Finding hostname for {addr}")
         return addr.split(":")[0]
 
+    # if path = "folder/blah" or "folder/", will create folder.
     def create_dir(self, path):
         if not os.path.exists(os.path.dirname(path)):
             try:
