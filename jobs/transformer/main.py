@@ -191,7 +191,7 @@ def evaluate(data_source):
                 print(total_seen)
                 raise Exception("WTF")
             total_loss += len(data) * criterion(output_flat, targets).item()
-    print("Accuracy: ", total_correct / (len(data_source) - 1))
+    print("Accuracy: ", total_correct / total_seen)
     return (total_loss / (len(data_source) - 1), total_correct / total_seen)
 
 
