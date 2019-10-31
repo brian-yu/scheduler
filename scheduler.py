@@ -26,12 +26,13 @@ WORKER_HOSTS = [
 ]
 
 class Job:
-    def __init__(self, job_name="default", epochs=3):
+    def __init__(self, job_name="default", epochs=3, executable="alexnet.py"):
         self.job_name = job_name
         self.epochs = epochs
         self.curr_epoch = 0
         self.start_time = None
         self.completed = False
+        self.executable = executable
 
         self.worker = None
         self.prev_worker = None
@@ -49,11 +50,6 @@ class Job:
     def __repr__(self):
         return f"({self.job_name}, epoch {self.curr_epoch + 1} of {self.epochs})"
 
-
-NUM_JOBS = 25
-NUM_EPOCHS_LO = 25 # will be 25
-NUM_EPOCHS_HI = 30 # will be 30
-
 class Scheduler:
 
     def __init__(self, worker_hosts, jobs=None):
@@ -62,11 +58,13 @@ class Scheduler:
 
         # Reset all workers and parameter servers.
         self.reset_nodes()
+        self.delete_directory_contents('log_folder')
+        self.delete_directory_contents('accuracy_folder')
+        self.delete_directory_contents('loss_folder')
 
         self.jobs = jobs
         if not jobs:
         # Create NUM_JOBS jobs each with NUM_EPOCHS epochs
-            get_num_epochs = lambda: random.randint(NUM_EPOCHS_LO, NUM_EPOCHS_HI)
             self.jobs = [
                 Job(job_name=f"job_{i}", epochs=get_num_epochs()) for i in range(NUM_JOBS)]
 
@@ -190,6 +188,7 @@ class Scheduler:
     # Download worker logs and test accuracy / loss
     def download_logs(self):
         self.log("Downloading worker logs and test results.")
+
         for worker_id, worker in enumerate(self.workers):
 
             if 'PUBLIC_IP' in os.environ and os.environ['PUBLIC_IP'] == worker.host:
@@ -226,11 +225,33 @@ class Scheduler:
                 if exc.errno != errno.EEXIST:
                     raise
 
+    def delete_directory_contents(self, rel_path):
+        path = os.path.join(os.getcwd(), rel_path)
+        self.log(f"Deleting {path}.")
+        for file in os.listdir(path):
+            file_path = os.path.join(path, file)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print(e)
+
+NUM_JOBS = 7
+NUM_EPOCHS_LO = 2 # will be 25
+NUM_EPOCHS_HI = 2 # will be 30
+
+get_num_epochs = lambda: random.randint(NUM_EPOCHS_LO, NUM_EPOCHS_HI)
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Master.')
     args = parser.parse_args()
+
+    jobs = []
+    for i in range(NUM_JOBS):
+        jobs.append(Job(job_name=f"job_{i}", epochs=get_num_epochs(), executable="alexnet.py"))
 
     scheduler = Scheduler(WORKER_HOSTS)
 

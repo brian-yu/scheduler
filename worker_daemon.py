@@ -43,7 +43,7 @@ class WorkerDaemon(Daemon):
         if command == Command.TRAIN:
 
             try:
-                job, worker_host, prev_worker_host = tokens[1:4]
+                job, executable, worker_host, prev_worker_host = tokens[1:4]
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
                 self.log(f"Training job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
@@ -57,7 +57,7 @@ class WorkerDaemon(Daemon):
 
                 self.logger.log_event_end(job, Event.DOWNLOAD)
 
-                os.system(f"python3 task3.py --job={job} --train")
+                os.system(f"python3 jobs/{executable} --job={job} --train")
                 self.log("Training finished.")
             except Exception as err:
                 self.log(f"Error: {err}")
@@ -68,7 +68,7 @@ class WorkerDaemon(Daemon):
         elif command == Command.VALIDATE:
 
             try:
-                job, worker_host, prev_worker_host = tokens[1:4]
+                job, executable, worker_host, prev_worker_host = tokens[1:4]
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
                 # self.log(f"Validating job={job}, worker_host={worker_host}")
@@ -78,7 +78,7 @@ class WorkerDaemon(Daemon):
                 self.download_latest_model(job, prev_worker_host)
                 # self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
 
-                os.system(f"python3 task3.py --job={job} --validate")
+                os.system(f"python3 jobs/{executable} --job={job} --validate")
                 self.log("Validation finished.")
             except Exception as err:
                 self.log(f"Error: {err}")
@@ -89,7 +89,7 @@ class WorkerDaemon(Daemon):
         elif command == Command.TEST:
 
             try:
-                job, worker_host, prev_worker_host = tokens[1:4]
+                job, executable, worker_host, prev_worker_host = tokens[1:4]
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
                 # self.log(f"Testing job={job}, worker_hosts={worker_hosts}")
@@ -99,7 +99,7 @@ class WorkerDaemon(Daemon):
                 self.download_latest_model(job, prev_worker_host)
                 # self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
 
-                os.system(f"python3 task3.py --job={job} --test")
+                os.system(f"python3 jobs/{executable} --job={job} --test")
                 self.log("Testing finished.")
             except Exception as err:
                 self.log(f"Error: {err}")

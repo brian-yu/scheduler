@@ -56,7 +56,7 @@ class WorkerClient(Client):
         if self.job.prev_worker:
             prev_worker_host = self.job.prev_worker.host
 
-        command = f"{Command.TRAIN.value} {job.job_name} {self.host} {prev_worker_host}"
+        command = f"{Command.TRAIN.value} {job.job_name} {job.executable} {self.host} {prev_worker_host}"
         print(command)
         return self.send(command)
 
@@ -69,7 +69,7 @@ class WorkerClient(Client):
         if self.job.prev_worker:
             prev_worker_host = self.job.prev_worker.host
 
-        command = f"{Command.VALIDATE.value} {job.job_name} {self.host} {prev_worker_host}"
+        command = f"{Command.VALIDATE.value} {job.job_name} {job.executable} {self.host} {prev_worker_host}"
         print(command)
         return self.send(command)
 
@@ -82,7 +82,7 @@ class WorkerClient(Client):
         if self.job.prev_worker:
             prev_worker_host = self.job.prev_worker.host
 
-        command = f"{Command.TEST.value} {job.job_name} {self.host} {prev_worker_host}"
+        command = f"{Command.TEST.value} {job.job_name} {job.executable} {self.host} {prev_worker_host}"
         print(command)
         return self.send(command)
 
