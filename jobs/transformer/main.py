@@ -98,6 +98,11 @@ train_data = batchify(corpus.train, args.batch_size)
 val_data = batchify(corpus.valid, eval_batch_size)
 test_data = batchify(corpus.test, eval_batch_size)
 
+print(f"Corpus dict length: {len(corpus.dictionary)}")
+print(f"Corpus train shape: {train_data.shape}")
+print(f"Corpus val shape: {val_data.shape}")
+print(f"Corpus test shape: {test_data.shape}")
+
 ###############################################################################
 # Build the model
 ###############################################################################
