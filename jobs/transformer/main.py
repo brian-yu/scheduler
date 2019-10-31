@@ -159,6 +159,7 @@ def evaluate(data_source):
             # print(data, targets, output_flat)
             print("Targets shape", targets.shape)
             print("Output_flat shape", output_flat.shape)
+            print(torch.argmax(output_flat) == targets)
             total_loss += len(data) * criterion(output_flat, targets).item()
     return total_loss / (len(data_source) - 1)
 
