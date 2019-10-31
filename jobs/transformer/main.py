@@ -156,7 +156,9 @@ def evaluate(data_source):
                 output, hidden = model(data, hidden)
                 hidden = repackage_hidden(hidden)
             output_flat = output.view(-1, ntokens)
-            print(data, targets, output_flat)
+            # print(data, targets, output_flat)
+            print("Targets shape", targets.shape)
+            print("Output_flat shape", output_flat.shape)
             total_loss += len(data) * criterion(output_flat, targets).item()
     return total_loss / (len(data_source) - 1)
 
