@@ -144,6 +144,7 @@ def evaluate(data_source):
     # Turn on evaluation mode which disables dropout.
     model.eval()
     total_loss = 0.
+    total_correct = 0
     ntokens = len(corpus.dictionary)
     if args.model != 'Transformer':
         hidden = model.init_hidden(eval_batch_size)
@@ -167,18 +168,21 @@ def evaluate(data_source):
             # print("word_idx", word_idx[0])
             # print(word_idx == targets)
             res = (word_idx == targets)
-            print('targets')
-            print(targets.shape)
-            print(targets.shape[0])
-            print('word_idx')
-            print(word_idx.shape)
-            print(word_idx.shape[0])
-            print('res')
-            print(res.shape)
-            print(torch.sum(res).item() / targets.shape[0])
+            # total_correct += 
+            # print('targets')
+            # print(targets.shape)
+            # print(targets.shape[0])
+            # print('word_idx')
+            # print(word_idx.shape)
+            # print(word_idx.shape[0])
+            # print('res')
+            # print(res.shape)
+            # print(torch.sum(res).item() / targets.shape[0])
             # print()
+            total_correct += torch.sum(res).item()
             total_loss += len(data) * criterion(output_flat, targets).item()
-    return total_loss / (len(data_source) - 1)
+    print("Accuracy: ", total_correct / (len(data_source) - 1))
+    return (total_loss / (len(data_source) - 1), total_correct / (len(data_source) - 1))
 
 
 def train():
