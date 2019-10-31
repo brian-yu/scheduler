@@ -49,7 +49,6 @@ models are more common in this domain.
     RNN Encoder-Decoder for Statistical Machine Translation
     ](https://arxiv.org/abs/1406.1078)
 '''
-from __future__ import print_function
 
 from keras.models import Model, load_model
 from keras.layers import Input, LSTM, Dense
@@ -57,6 +56,7 @@ import numpy as np
 import os
 import zipfile
 import sys
+import argparse
 
 sys.path.append('.') # append directory with constants.py to path
 from constants import Event, Logger
