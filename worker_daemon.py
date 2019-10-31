@@ -59,8 +59,9 @@ class WorkerDaemon(Daemon):
                 Then the worker daemon will read the times and send salient timing information.
                 '''
                 self.logger.log_event_start(job, Event.DOWNLOAD)
-                self.download_latest_model(job, prev_worker_host)
-                # self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
+                
+                # Transfer model files to current host.
+                self.transfer_job_files(job, prev_worker_host)
 
                 self.logger.log_event_end(job, Event.DOWNLOAD)
 
@@ -81,9 +82,8 @@ class WorkerDaemon(Daemon):
                 # self.log(f"Validating job={job}, worker_host={worker_host}")
                 self.log(f"Validating job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
 
-                # Download 'latest_model_{jobName}.ckpt' .index and .data files.
-                self.download_latest_model(job, prev_worker_host)
-                # self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
+                # Transfer model files to current host.
+                self.transfer_job_files(job, prev_worker_host)
 
                 os.system(f"python3 jobs/{executable} --job={job} --validate")
                 self.log("Validation finished.")
@@ -102,9 +102,8 @@ class WorkerDaemon(Daemon):
                 # self.log(f"Testing job={job}, worker_hosts={worker_hosts}")
                 self.log(f"Testing job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
 
-                # Download 'latest_model_{jobName}.ckpt' .index and .data files.
-                self.download_latest_model(job, prev_worker_host)
-                # self.sendRecv((prev_worker_host, 8888), f"{Command.CLEAN.value} {job}")
+                # Transfer model files to current host.
+                self.transfer_job_files(job, prev_worker_host)
 
                 os.system(f"python3 jobs/{executable} --job={job} --test")
                 self.log("Testing finished.")
@@ -161,16 +160,11 @@ class WorkerDaemon(Daemon):
                 print(e)
 
     # Download all files in checkpoint folder from prev_host.
-    def download_latest_model(self, job, prev_worker_host):
+    def transfer_job_files(self, job, prev_worker_host):
         if prev_worker_host == "None":
             return
         if self.same_node(prev_worker_host):
             return
-        # Download 'latest_model_{jobName}.ckpt' .index and .data files.
-        # fnames = [
-        #     f"latest_model_{job}.ckpt.index",
-        #     f"latest_model_{job}.ckpt.meta",
-        #     f"latest_model_{job}.ckpt.data-00000-of-00001"]
 
         # Download files.
         self.download_checkpoint_files(job, prev_worker_host)
