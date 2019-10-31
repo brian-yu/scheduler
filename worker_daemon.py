@@ -43,7 +43,7 @@ class WorkerDaemon(Daemon):
         if command == Command.TRAIN:
 
             try:
-                job, executable, worker_host, prev_worker_host = tokens[1:4]
+                job, executable, worker_host, prev_worker_host = tokens[1:]
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
                 self.log(f"Training job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
@@ -68,7 +68,7 @@ class WorkerDaemon(Daemon):
         elif command == Command.VALIDATE:
 
             try:
-                job, executable, worker_host, prev_worker_host = tokens[1:4]
+                job, executable, worker_host, prev_worker_host = tokens[1:]
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
                 # self.log(f"Validating job={job}, worker_host={worker_host}")
@@ -89,7 +89,7 @@ class WorkerDaemon(Daemon):
         elif command == Command.TEST:
 
             try:
-                job, executable, worker_host, prev_worker_host = tokens[1:4]
+                job, executable, worker_host, prev_worker_host = tokens[1:]
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
                 # self.log(f"Testing job={job}, worker_hosts={worker_hosts}")
