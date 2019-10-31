@@ -222,6 +222,16 @@ NUM_CV_JOBS = 6
 NUM_EPOCHS_LO = 4 # will be 25
 NUM_EPOCHS_HI = 6 # will be 30
 
+
+'''
+Epoch recommandations:
+- Alexnet: 25-30
+
+- seq2seq: up to 100
+- Transformer: 40
+- 
+'''
+
 get_num_epochs = lambda lo, hi: random.randint(lo, hi)
 
 if __name__ == "__main__":
