@@ -12,6 +12,7 @@ import sys
 
 sys.path.append('.') # append directory with constants.py to path
 from constants import Event, Logger
+from file_utils import create_directory
 import data
 import model
 
@@ -71,6 +72,7 @@ device = torch.device("cuda" if use_gpu else "cpu")
 ###############################################################################
 
 data_file = 'data/wikitext-2/data.pt'
+create_directory(data_file)
 if os.path.exists(data_file):
     data = torch.load(data_file)
     train_data = data['train_data']
