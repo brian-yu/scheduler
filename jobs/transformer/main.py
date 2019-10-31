@@ -70,44 +70,58 @@ device = torch.device("cuda" if use_gpu else "cpu")
 # Load data
 ###############################################################################
 
-corpus = data.Corpus(args.data)
+data_file = 'datasets/wikitext-2/data.pt'
+if os.path.exists(data_file):
+    data = torch.load(PATH)
+    train_data = data['train_data']
+    val_data = data['val_data']
+    test_data = data['test_data']
+    ntokens = data['ntokens']
+else:
 
-# Starting from sequential data, batchify arranges the dataset into columns.
-# For instance, with the alphabet as the sequence and batch size 4, we'd get
-# ┌ a g m s ┐
-# │ b h n t │
-# │ c i o u │
-# │ d j p v │
-# │ e k q w │
-# └ f l r x ┘.
-# These columns are treated as independent by the model, which means that the
-# dependence of e. g. 'g' on 'f' can not be learned, but allows more efficient
-# batch processing.
+    corpus = data.Corpus(args.data)
 
-def batchify(data, bsz):
-    # Work out how cleanly we can divide the dataset into bsz parts.
-    nbatch = data.size(0) // bsz
-    # Trim off any extra elements that wouldn't cleanly fit (remainders).
-    data = data.narrow(0, 0, nbatch * bsz)
-    # Evenly divide the data across the bsz batches.
-    data = data.view(bsz, -1).t().contiguous()
-    return data.to(device)
+    # Starting from sequential data, batchify arranges the dataset into columns.
+    # For instance, with the alphabet as the sequence and batch size 4, we'd get
+    # ┌ a g m s ┐
+    # │ b h n t │
+    # │ c i o u │
+    # │ d j p v │
+    # │ e k q w │
+    # └ f l r x ┘.
+    # These columns are treated as independent by the model, which means that the
+    # dependence of e. g. 'g' on 'f' can not be learned, but allows more efficient
+    # batch processing.
 
-eval_batch_size = 10
-train_data = batchify(corpus.train, args.batch_size)
-val_data = batchify(corpus.valid, eval_batch_size)
-test_data = batchify(corpus.test, eval_batch_size)
+    def batchify(data, bsz):
+        # Work out how cleanly we can divide the dataset into bsz parts.
+        nbatch = data.size(0) // bsz
+        # Trim off any extra elements that wouldn't cleanly fit (remainders).
+        data = data.narrow(0, 0, nbatch * bsz)
+        # Evenly divide the data across the bsz batches.
+        data = data.view(bsz, -1).t().contiguous()
+        return data.to(device)
 
-print(f"Corpus dict length: {len(corpus.dictionary)}")
-print(f"Corpus train shape: {train_data.shape}")
-print(f"Corpus val shape: {val_data.shape}")
-print(f"Corpus test shape: {test_data.shape}")
+    eval_batch_size = 10
+    train_data = batchify(corpus.train, args.batch_size)
+    val_data = batchify(corpus.valid, eval_batch_size)
+    test_data = batchify(corpus.test, eval_batch_size)
+
+    ntokens = len(corpus.dictionary)
+    torch.save({
+        'ntokens': ntokens,
+        'train_data': train_data,
+        'val_data': val_data,
+        'test_data': test_data,
+        }, 'datasets/wikitext-2/data.pt')
+
+
 
 ###############################################################################
 # Build the model
 ###############################################################################
 
-ntokens = len(corpus.dictionary)
+# ntokens = len(corpus.dictionary) # == 33278
 if args.model == 'Transformer':
     model = model.TransformerModel(ntokens, args.emsize, args.nhead, args.nhid, args.nlayers, args.dropout).to(device)
 else:
@@ -151,7 +165,7 @@ def evaluate(data_source):
     total_loss = 0.
     total_correct = 0
     total_seen = 0
-    ntokens = len(corpus.dictionary)
+    # ntokens = len(corpus.dictionary)
     if args.model != 'Transformer':
         hidden = model.init_hidden(eval_batch_size)
     with torch.no_grad():
@@ -184,7 +198,7 @@ def train():
     model.train()
     total_loss = 0.
     start_time = time.time()
-    ntokens = len(corpus.dictionary)
+    # ntokens = len(corpus.dictionary)
     if args.model != 'Transformer':
         hidden = model.init_hidden(args.batch_size)
     for batch, i in enumerate(range(0, train_data.size(0) - 1, args.bptt)):
