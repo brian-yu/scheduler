@@ -10,6 +10,7 @@ from threading import Thread, Lock
 from ftplib import FTP
 import re
 import glob
+import errno
 
 from daemon import Daemon
 from constants import Command, Status, Event, Logger
@@ -26,10 +27,6 @@ class WorkerDaemon(Daemon):
         self.worker_status_lock = Lock()
 
         self.logger = Logger()
-
-        self.create_dir("log_folder")
-        self.create_dir("loss_folder")
-        self.create_dir("accuracy_folder")
 
     def receive(self, message):
         tokens = message.split()
@@ -52,6 +49,9 @@ class WorkerDaemon(Daemon):
                     self.worker_status = Status.BUSY
 
                 self.create_dir(f"checkpoints/{job}")
+                self.create_dir("log_folder")
+                self.create_dir("loss_folder")
+                self.create_dir("accuracy_folder")
 
                 self.log(f"Training job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
                 '''
