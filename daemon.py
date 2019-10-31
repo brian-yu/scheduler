@@ -2,7 +2,7 @@ import argparse
 import sys
 import os
 import time
-from socket import socket, AF_INET, SOCK_STREAM
+from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 from threading import Thread, Lock
 
 class Daemon:
@@ -17,7 +17,7 @@ class Daemon:
             raise Exception("Cannot use reserved port.")
 
         self.sock = socket(AF_INET, SOCK_STREAM)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         self.sock.bind((self.host, self.port))
         self.sock.listen(10)
 
