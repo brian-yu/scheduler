@@ -9,6 +9,7 @@ import os
 
 from constants import Command, Status, Event
 from clients import WorkerClient
+from file_utils import delete_directory_contents, create_directory
 
 class Mode(Enum):
     TRAINING = "Training"
@@ -58,9 +59,9 @@ class Scheduler:
 
         # Reset all workers and parameter servers.
         self.reset_nodes()
-        self.delete_directory_contents('log_folder')
-        self.delete_directory_contents('accuracy_folder')
-        self.delete_directory_contents('loss_folder')
+        delete_directory_contents('log_folder')
+        delete_directory_contents('accuracy_folder')
+        delete_directory_contents('loss_folder')
 
         self.jobs = jobs
         if not jobs:
@@ -198,45 +199,24 @@ class Scheduler:
                 # download worker log
                 file_path = os.path.join('log_folder', 'worker_log')
                 save_path = os.path.join('log_folder', f'worker_{worker_id}_log')
-                self.create_dir(save_path)
+                create_directory(save_path)
                 with open(save_path, 'wb') as fp:
                     ftp.retrbinary(f'RETR {file_path}', fp.write)
 
                 # download accuracy files
                 for acc_file in ftp.nlst('accuracy_folder'):
                     path = os.path.join('accuracy_folder', acc_file)
-                    self.create_dir(path)
+                    create_directory(path)
                     with open(path, 'wb') as fp:
                         ftp.retrbinary(f'RETR {path}', fp.write)
 
                 # download loss files
                 for acc_file in ftp.nlst('loss_folder'):
                     path = os.path.join('loss_folder', acc_file)
-                    self.create_dir(path)
+                    create_directory(path)
                     with open(path, 'wb') as fp:
                         ftp.retrbinary(f'RETR {path}', fp.write)
         self.log("Finished downloading.")
-
-    def create_dir(self, path):
-        if not os.path.exists(os.path.dirname(path)):
-            try:
-                os.makedirs(os.path.dirname(path))
-            except OSError as exc: # Guard against race condition
-                if exc.errno != errno.EEXIST:
-                    raise
-
-    def delete_directory_contents(self, rel_path):
-        path = os.path.join(os.getcwd(), rel_path)
-        self.log(f"Deleting {path}.")
-        for file in os.listdir(path):
-            file_path = os.path.join(path, file)
-            try:
-                if os.path.isfile(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                print(e)
 
 NUM_JOBS = 7
 NUM_EPOCHS_LO = 2 # will be 25

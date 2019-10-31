@@ -14,6 +14,7 @@ import errno
 
 from daemon import Daemon
 from constants import Command, Status, Event, Logger
+from file_utils import delete_directory_contents, create_directory
 
 class WorkerDaemon(Daemon):
 
@@ -48,10 +49,10 @@ class WorkerDaemon(Daemon):
                 with self.worker_status_lock:
                     self.worker_status = Status.BUSY
 
-                self.create_dir(f"checkpoints/{job}/")
-                self.create_dir("log_folder/")
-                self.create_dir("loss_folder/")
-                self.create_dir("accuracy_folder/")
+                create_directory(f"checkpoints/{job}/")
+                create_directory("log_folder/")
+                create_directory("loss_folder/")
+                create_directory("accuracy_folder/")
 
                 self.log(f"Training job={job}, worker_hosts={worker_host}, prev_worker_host={prev_worker_host}")
                 '''
@@ -126,7 +127,7 @@ class WorkerDaemon(Daemon):
 
             try:
                 job = tokens[1]
-                self.delete_directory_contents(f'checkpoints/{job}')
+                delete_directory_contents(f'checkpoints/{job}')
 
             except Exception as err:
                 self.log(f"Error: {err}")
@@ -137,27 +138,14 @@ class WorkerDaemon(Daemon):
                 # self.terminate_parameter_servers()
                 # Terminate workers
                 os.system("kill -9 `ps -ef | grep task3.py | awk '{print $2}'`")
-                self.delete_directory_contents('checkpoints')
-                self.delete_directory_contents('log_folder')
-                self.delete_directory_contents('loss_folder')
-                self.delete_directory_contents('accuracy_folder')
+                delete_directory_contents('checkpoints')
+                delete_directory_contents('log_folder')
+                delete_directory_contents('loss_folder')
+                delete_directory_contents('accuracy_folder')
             except Exception as err:
                 self.log(f"Error: {err}")
             
         return "Done"
-
-    def delete_directory_contents(self, rel_path):
-        path = os.path.join(os.getcwd(), rel_path)
-        self.log(f"Deleting {path}.")
-        for file in os.listdir(path):
-            file_path = os.path.join(path, file)
-            try:
-                if os.path.isfile(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                print(e)
 
     # Download all files in checkpoint folder from prev_host.
     def transfer_job_files(self, job, prev_worker_host):
@@ -176,7 +164,7 @@ class WorkerDaemon(Daemon):
         
 
         checkpoint_dir = os.path.join('checkpoints', job)
-        self.create_dir(checkpoint_dir)
+        create_directory(checkpoint_dir)
 
         ftp = FTP(host, user="checkpoints", passwd="test")
         ftp.cwd(checkpoint_dir)
@@ -192,19 +180,6 @@ class WorkerDaemon(Daemon):
         self.sock.close()
         self.log("Exiting.")
         sys.exit(0)
-
-    def hostname(self, addr):
-        self.log(f"Finding hostname for {addr}")
-        return addr.split(":")[0]
-
-    # if path = "folder/blah" or "folder/", will create folder.
-    def create_dir(self, path):
-        if not os.path.exists(os.path.dirname(path)):
-            try:
-                os.makedirs(os.path.dirname(path))
-            except OSError as exc: # Guard against race condition
-                if exc.errno != errno.EEXIST:
-                    raise
 
     def delete_old_checkpoints(self, job):
         # Get all model.ckpt filenames
