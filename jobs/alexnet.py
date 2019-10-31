@@ -354,22 +354,16 @@ def main(_):
                        train_folder + "/latest_model_" + j_name + ".ckpt")
             logger.log_event_end(Event.SAVE)
 
-    if FLAGS.validate:
-        #evaluate the model performance in the current epoch
-        with tf.Session() as sess:
+    # if FLAGS.validate:
+    #     #evaluate the model performance in the current epoch
+    #     with tf.Session() as sess:
             with open('./log_folder/' + j_name + '_log', 'a') as f:
                 f.write('\n\nevaluating the accuracy on the validation set')
 
-            # print(f"CHECKPOINT FOLDER: {train_folder}")
-            # ckpt = tf.train.latest_checkpoint(train_folder)
-            # print(f"CHECKPOINT: {ckpt}")
-            # saver = tf.train.import_meta_graph(
-            #     train_folder + "/latest_model_" + j_name + ".ckpt.meta",
-            #     clear_devices=True)
+
+            # ckpt = train_folder + "/latest_model_" + j_name + ".ckpt"
+            # print(f"Restoring model from {ckpt}")
             # saver.restore(sess, ckpt)
-            ckpt = train_folder + "/latest_model_" + j_name + ".ckpt"
-            print(f"Restoring model from {ckpt}")
-            saver.restore(sess, ckpt)
 
             cv_auc_list = []
             cv_acc_list = []

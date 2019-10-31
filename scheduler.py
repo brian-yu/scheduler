@@ -229,11 +229,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Master.')
     args = parser.parse_args()
 
+
+    job_exec = "lstm_seq2seq.py"
     jobs = []
     for i in range(NUM_JOBS):
-        jobs.append(Job(job_name=f"job_{i}", epochs=get_num_epochs(), executable="alexnet.py"))
+        jobs.append(Job(job_name=f"job_{i}", epochs=get_num_epochs(), executable=job_exec))
 
-    scheduler = Scheduler(WORKER_HOSTS)
+    scheduler = Scheduler(WORKER_HOSTS, jobs = jobs)
 
     scheduler.train()
     # scheduler.validate()
