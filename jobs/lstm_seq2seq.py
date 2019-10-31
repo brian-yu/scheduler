@@ -61,9 +61,9 @@ import argparse
 sys.path.append('.') # append directory with constants.py to path
 from constants import Event, Logger
 
-def main(FLAGS):
+def main(args):
 
-    job_name = FLAGS.job_name
+    job_name = args.job_name
     checkpoint_dir = f"checkpoints/{job_name}"
 
     logger = Logger(job_name)
@@ -271,7 +271,6 @@ def main(FLAGS):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.register("type", "bool", lambda v: v.lower() == "true")
     parser.add_argument("--job",
                         type=str,
                         default="default",
@@ -280,9 +279,6 @@ if __name__ == "__main__":
     parser.add_argument('--train', help='whether to train or not', action='store_true')
     parser.add_argument('--validate', help='whether to validate or not', action='store_true')
     parser.add_argument('--test', help='whether to test or not', action='store_true')
-    FLAGS, unparsed = parser.parse_known_args()
-    # print(FLAGS)
-    # tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
-
-    # job_name = FLAGS.job
-    main(FLAGS)
+    args = parser.parse_args()
+    print(args)
+    main(args)
