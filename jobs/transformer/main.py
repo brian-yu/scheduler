@@ -159,7 +159,7 @@ def evaluate(data_source):
             # print(data, targets, output_flat)
 
             word_weights = output_flat.squeeze().div(1.0).exp()
-            word_idx = torch.multinomial(word_weights, 1)
+            word_idx = torch.flatten(torch.multinomial(word_weights, 1))
             # word_tensor = torch.Tensor([[word_idx]]).long().to(device)
             # print("Targets", targets[0])
             # print("Targets shape", targets.shape)
@@ -168,6 +168,7 @@ def evaluate(data_source):
             # print(word_idx == targets)
             res = (word_idx == targets)
             print('targets')
+            print(targets.shape)
             print(targets.shape[0])
             print('word_idx')
             print(word_idx.shape)
