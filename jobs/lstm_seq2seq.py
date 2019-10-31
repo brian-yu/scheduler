@@ -76,12 +76,12 @@ def main(args):
 
 
     # Unzipping file
-    with zipfile.ZipFile("datasets/lstm_seq2srq.zip", "r") as zip_ref:
+    with zipfile.ZipFile("datasets/lstm_seq2seq.zip", "r") as zip_ref:
         zip_ref.extractall('data')
 
 
     # Path to the data txt file on disk.
-    data_path = 'data/lstm_seq2srq/'
+    data_path = 'data/lstm_seq2seq/'
 
     encoder_input_data = np.load(os.path.join(data_path, "encoder_input_data.npy"))
     decoder_input_data = np.load(os.path.join(data_path, "decoder_input_data.npy"))
@@ -146,6 +146,9 @@ def main(args):
     #     decoder_target_data[i, t:, target_token_index[' ']] = 1.
 
     #### Build Model.
+
+    num_encoder_tokens = encoder_input_data.shape[2]
+    num_decoder_tokens = decoder_input_data.shape[2]
 
     # Define an input sequence and process it.
     encoder_inputs = Input(shape=(None, num_encoder_tokens))
