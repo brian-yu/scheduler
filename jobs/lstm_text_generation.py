@@ -22,6 +22,7 @@ import numpy as np
 import random
 import sys
 import io
+import argparse
 
 sys.path.append('.') # append directory with constants.py to path
 from constants import Event, Logger
