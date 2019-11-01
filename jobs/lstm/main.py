@@ -188,7 +188,7 @@ def evaluate(data_source):
                 word_weights = output_flat.squeeze().div(1.0).exp()
                 word_idx = torch.flatten(torch.multinomial(word_weights, 1))
             else:
-                word_weights = output.squeeze().div(args.temperature).exp().cpu()
+                word_weights = output.squeeze().div(1.0).exp().cpu()
                 word_idx = torch.multinomial(word_weights, 1)[0]
 
             res = (word_idx == targets)
