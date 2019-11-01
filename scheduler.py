@@ -229,8 +229,7 @@ Epoch recommandations:
 
 - seq2seq: up to 100 -> `lstm_seq2seq.py`
 - Transformer (transformer/main.py): 40 -> `transformer/main.py`
-- LSTM: 40 -> `transformer/main.py --model LSTM --lr 20`
-- 
+- LSTM text generator: 60 -> `lstm_text_generation.py`
 '''
 
 get_num_epochs = lambda lo, hi: random.randint(lo, hi)
@@ -258,12 +257,20 @@ if __name__ == "__main__":
     #             epochs=get_num_epochs(80, 100),
     #             executable='lstm_seq2seq.py'))
 
-    for i in range(5):
+    # for i in range(5):
+    #     job_id = len(jobs)
+    #     jobs.append(
+    #         Job(job_name=f"job_{job_id}",
+    #             epochs=get_num_epochs(40, 40),
+    #             executable='transformer/main.py'))
+
+    for i in range(7):
         job_id = len(jobs)
         jobs.append(
             Job(job_name=f"job_{job_id}",
-                epochs=get_num_epochs(40, 40),
-                executable='lstm/main.py'))
+                epochs=get_num_epochs(2, 2),
+                executable='lstm_text_generation.py'))
+
     random.shuffle(jobs)
 
     scheduler = Scheduler(WORKER_HOSTS, jobs = jobs)
