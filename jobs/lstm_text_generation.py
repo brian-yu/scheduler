@@ -74,7 +74,7 @@ def main(args):
     model.add(Dense(len(chars), activation='softmax'))
 
     optimizer = RMSprop(learning_rate=0.01)
-    model.compile(loss='categorical_crossentropy', optimizer=optimizer)
+    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics='accuracy')
 
 
     # def sample(preds, temperature=1.0):
