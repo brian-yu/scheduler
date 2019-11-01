@@ -227,9 +227,9 @@ NUM_EPOCHS_HI = 6 # will be 30
 Epoch recommandations:
 - Alexnet: 25-30
 
-- seq2seq: up to 100
-- Transformer (transformer/main.py): 40
-- 
+- seq2seq: up to 100 -> `lstm_seq2seq.py`
+- Transformer (transformer/main.py): 40 -> `transformer/main.py`
+- LSTM: 40 -> `transformer/main.py --model LSTM --lr 20`
 - 
 '''
 
