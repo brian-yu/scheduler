@@ -13,7 +13,7 @@ has at least ~100k characters. ~1M is better.
 
 from __future__ import print_function
 from keras.callbacks import LambdaCallback
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras.optimizers import RMSprop
