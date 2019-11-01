@@ -130,7 +130,7 @@ def main(args):
               epochs=1, #60,
               callbacks=[print_callback])
 
-    print(history.keys())
+    print(history.history.keys())
 
 
     logger.log_val_acc(history.history['val_accuracy'][-1])
