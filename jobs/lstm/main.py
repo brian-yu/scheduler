@@ -184,12 +184,12 @@ def evaluate(data_source):
                 
             output_flat = output.view(-1, ntokens)
 
-            if args.model == 'Transformer':
-                word_weights = output_flat.squeeze().div(1.0).exp()
-                word_idx = torch.flatten(torch.multinomial(word_weights, 1))
-            else:
-                word_weights = output.squeeze().div(1.0).exp().cpu()
-                word_idx = torch.multinomial(word_weights, 1)[0]
+            # if args.model == 'Transformer':
+            word_weights = output_flat.squeeze().div(1.0).exp()
+            word_idx = torch.flatten(torch.multinomial(word_weights, 1))
+            # else:
+            #     word_weights = output.squeeze().div(1.0).exp()
+            #     word_idx = torch.multinomial(word_weights, 1)[0]
 
             res = (word_idx == targets)
             total_correct += torch.sum(res).item()
