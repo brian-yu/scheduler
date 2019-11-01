@@ -132,7 +132,8 @@ def main(args):
 
     history = model.fit(x, y,
               batch_size=128,
-              epochs=1)
+              epochs=1,
+              validation_split=0.2)
 
     print(history.history.keys())
 
