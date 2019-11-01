@@ -219,8 +219,8 @@ class Scheduler:
         self.log("Finished downloading.")
 
 NUM_CV_JOBS = 7
-NUM_EPOCHS_LO = 4 # will be 25
-NUM_EPOCHS_HI = 6 # will be 30
+# NUM_EPOCHS_LO = 4 # will be 25
+# NUM_EPOCHS_HI = 6 # will be 30
 
 
 '''
@@ -258,11 +258,11 @@ if __name__ == "__main__":
     #             epochs=get_num_epochs(80, 100),
     #             executable='lstm_seq2seq.py'))
 
-    for i in range(NUM_CV_JOBS):
+    for i in range(5):
         job_id = len(jobs)
         jobs.append(
             Job(job_name=f"job_{job_id}",
-                epochs=get_num_epochs(2, 2),
+                epochs=get_num_epochs(40, 40),
                 executable='lstm/main.py'))
     random.shuffle(jobs)
 
@@ -273,6 +273,7 @@ if __name__ == "__main__":
 
     scheduler.download_logs()
 
-    print("Warnings:")
-    for warning in scheduler.warnings:
-        print(f"\t{warning}")
+    if scheduler.warnings:
+        print("Warnings:")
+        for warning in scheduler.warnings:
+            print(f"\t{warning}")
