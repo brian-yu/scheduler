@@ -21,11 +21,11 @@ parser.add_argument('--data', type=str, default='./datasets/wikitext-2',
                     help='location of the data corpus')
 parser.add_argument('--model', type=str, default='LSTM',
                     help='type of recurrent net (RNN_TANH, RNN_RELU, LSTM, GRU, Transformer)')
-parser.add_argument('--emsize', type=int, default=200,
+parser.add_argument('--emsize', type=int, default=650,
                     help='size of word embeddings')
-parser.add_argument('--nhid', type=int, default=200,
+parser.add_argument('--nhid', type=int, default=650,
                     help='number of hidden units per layer')
-parser.add_argument('--nlayers', type=int, default=4,
+parser.add_argument('--nlayers', type=int, default=2,
                     help='number of layers')
 parser.add_argument('--lr', type=float, default=20,
                     help='initial learning rate')
@@ -37,7 +37,7 @@ parser.add_argument('--batch_size', type=int, default=20, metavar='N',
                     help='batch size')
 parser.add_argument('--bptt', type=int, default=35,
                     help='sequence length')
-parser.add_argument('--dropout', type=float, default=0.2,
+parser.add_argument('--dropout', type=float, default=0.5,
                     help='dropout applied to layers (0 = no dropout)')
 parser.add_argument('--tied', action='store_true',
                     help='tie the word embedding and softmax weights')
@@ -76,6 +76,7 @@ device = torch.device("cuda" if use_gpu else "cpu")
 
 data_file = 'data/wikitext-2/data.pt'
 create_directory(data_file)
+eval_batch_size = 10
 if os.path.exists(data_file):
     data = torch.load(data_file)
     train_data = data['train_data']
@@ -107,7 +108,6 @@ else:
         data = data.view(bsz, -1).t().contiguous()
         return data.to(device)
 
-    eval_batch_size = 10
     train_data = batchify(corpus.train, args.batch_size)
     val_data = batchify(corpus.valid, eval_batch_size)
     test_data = batchify(corpus.test, eval_batch_size)

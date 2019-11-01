@@ -263,7 +263,7 @@ if __name__ == "__main__":
         jobs.append(
             Job(job_name=f"job_{job_id}",
                 epochs=get_num_epochs(2, 2),
-                executable='transformer/main.py'))
+                executable='lstm/main.py'))
     random.shuffle(jobs)
 
     scheduler = Scheduler(WORKER_HOSTS, jobs = jobs)
