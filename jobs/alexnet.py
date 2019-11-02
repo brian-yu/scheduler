@@ -320,13 +320,14 @@ def main(_):
         #while num_epoch < epochs:
         with tf.Session(config=config) as sess:
 
-
+            logger.log_event_start(Event.RESTORE)
             ckpt = train_folder + "/latest_model_" + j_name + ".ckpt"
             if os.path.exists(ckpt + ".index"):
                 print(f"Restoring model from {ckpt}")
                 saver.restore(sess, ckpt)
             else:
                 sess.run(init)
+            logger.log_event_end(Event.RESTORE)
 
             print('training')
             logger.log_event_start(Event.TRAIN)

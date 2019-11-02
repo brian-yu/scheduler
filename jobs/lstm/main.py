@@ -261,7 +261,9 @@ try:
         ckpt = os.path.join(checkpoint_dir, f"latest_model_{args.job}.pt")
         if os.path.exists(ckpt):
             print(f"Restoring model from {ckpt}")
+            logger.log_event_start(Event.RESTORE)
             model = torch.load(ckpt)
+            logger.log_event_end(Event.RESTORE)
 
         train()
         val_loss, val_acc = evaluate(val_data)
@@ -279,7 +281,9 @@ try:
         else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
             lr /= 4.0
+        logger.log_event_start(Event.SAVE)
         torch.save(model, ckpt)
+        logger.log_event_end(Event.SAVE)
 except KeyboardInterrupt:
     print('-' * 89)
     print('Exiting from training early')

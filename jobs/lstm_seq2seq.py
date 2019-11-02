@@ -177,10 +177,12 @@ def main(args):
                   metrics=['accuracy'])
 
 
+    logger.log_event_start(Event.RESTORE)
     ckpt = os.path.join(checkpoint_dir, f"latest_model_{job_name}.h5")
     if os.path.exists(ckpt):
         print(f"Restoring model from {ckpt}")
         model = load_model(ckpt)
+    logger.log_event_end(Event.RESTORE)
 
     history = model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
               batch_size=batch_size,
@@ -191,7 +193,9 @@ def main(args):
     logger.log_val_loss(history.history['val_loss'][-1])
 
     # Save model
+    logger.log_event_start(Event.SAVE)
     model.save(ckpt)
+    logger.log_event_end(Event.SAVE)
 
     # # Next: inference mode (sampling).
     # # Here's the drill:

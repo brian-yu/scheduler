@@ -21,6 +21,7 @@ class Event(Enum):
     BUILD = "BUILD"
     TRAIN = "TRAIN"
     SAVE = "SAVE"
+    RESTORE = "RESTORE"
     VAL_ACC = "VAL_ACC"
     VAL_LOSS = "VAL_LOSS"
 

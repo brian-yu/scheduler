@@ -36,6 +36,7 @@ def main(args):
     checkpoint_dir = f"checkpoints/{job_name}"
     logger = Logger(job_name)
 
+    logger.log_event_start(Event.RESTORE)
     path = get_file(
         'nietzsche.txt',
         origin='https://s3.amazonaws.com/text-datasets/nietzsche.txt')
@@ -44,7 +45,7 @@ def main(args):
     print('corpus length:', len(text))
 
     chars = sorted(list(set(text)))
-    print('total chars:', len(chars))
+    # print('total chars:', len(chars))
     char_indices = dict((c, i) for i, c in enumerate(chars))
     indices_char = dict((i, c) for i, c in enumerate(chars))
 
@@ -56,7 +57,7 @@ def main(args):
     for i in range(0, len(text) - maxlen, step):
         sentences.append(text[i: i + maxlen])
         next_chars.append(text[i + maxlen])
-    print('nb sequences:', len(sentences))
+    # print('nb sequences:', len(sentences))
 
     print('Vectorization...')
     x = np.zeros((len(sentences), maxlen, len(chars)), dtype=np.bool)
@@ -124,6 +125,7 @@ def main(args):
     if os.path.exists(ckpt):
         print(f"Restoring model from {ckpt}")
         model = load_model(ckpt)
+    logger.log_event_end(Event.RESTORE)
 
     # history = model.fit(x, y,
     #           batch_size=128,
@@ -135,14 +137,15 @@ def main(args):
               epochs=1,
               validation_split=0.2)
 
-    print(history.history.keys())
 
 
     logger.log_val_acc(history.history['val_accuracy'][-1])
     logger.log_val_loss(history.history['val_loss'][-1])
 
     # Save model
+    logger.log_event_start(Event.SAVE)
     model.save(ckpt)
+    logger.log_event_end(Event.SAVE)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
