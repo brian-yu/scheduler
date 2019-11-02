@@ -184,10 +184,12 @@ def main(args):
         model = load_model(ckpt)
     logger.log_event_end(Event.RESTORE)
 
+    logger.log_event_start(Event.TRAIN)
     history = model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
               batch_size=batch_size,
               epochs=1,
               validation_split=0.2)
+    logger.log_event_end(Event.TRAIN)
 
     logger.log_val_acc(history.history['val_accuracy'][-1])
     logger.log_val_loss(history.history['val_loss'][-1])

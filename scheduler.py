@@ -218,6 +218,12 @@ class Scheduler:
                         ftp.retrbinary(f'RETR {path}', fp.write)
         self.log("Finished downloading.")
 
+    def save_logs(self):
+        with open('log_folder/scheduler_log', 'w') as f:
+            for job in self.jobs:
+                data = [job.job_name, job.epochs, job.executable]
+                f.write(f"{" ".join(data)}\n")
+
 NUM_CV_JOBS = 7
 # NUM_EPOCHS_LO = 4 # will be 25
 # NUM_EPOCHS_HI = 6 # will be 30
@@ -243,28 +249,28 @@ if __name__ == "__main__":
     # job_exec = "lstm_seq2seq.py"
     # job_exec = "alexnet.py"
     jobs = []
-    # for i in range(NUM_CV_JOBS):
-    #     job_id = len(jobs)
-    #     jobs.append(
-    #         Job(job_name=f"job_{job_id}",
-    #             epochs=get_num_epochs(25, 30),
-    #             executable='alexnet.py'))
+    for i in range(NUM_CV_JOBS):
+        job_id = len(jobs)
+        jobs.append(
+            Job(job_name=f"job_{job_id}",
+                epochs=get_num_epochs(2, 2),
+                executable='alexnet.py'))
     
-    # for i in range(NUM_CV_JOBS*2):
-    #     job_id = len(jobs)
-    #     jobs.append(
-    #         Job(job_name=f"job_{job_id}",
-    #             epochs=get_num_epochs(80, 100),
-    #             executable='lstm_seq2seq.py'))
+    for i in range(NUM_CV_JOBS):
+        job_id = len(jobs)
+        jobs.append(
+            Job(job_name=f"job_{job_id}",
+                epochs=get_num_epochs(2, 2),
+                executable='lstm_seq2seq.py'))
 
-    # for i in range(5):
-    #     job_id = len(jobs)
-    #     jobs.append(
-    #         Job(job_name=f"job_{job_id}",
-    #             epochs=get_num_epochs(40, 40),
-    #             executable='transformer/main.py'))
+    for i in range(NUM_CV_JOBS):
+        job_id = len(jobs)
+        jobs.append(
+            Job(job_name=f"job_{job_id}",
+                epochs=get_num_epochs(2, 2),
+                executable='transformer/main.py'))
 
-    for i in range(7):
+    for i in range(NUM_CV_JOBS):
         job_id = len(jobs)
         jobs.append(
             Job(job_name=f"job_{job_id}",
@@ -279,6 +285,8 @@ if __name__ == "__main__":
     # scheduler.test()
 
     scheduler.download_logs()
+
+    scheduler.save_logs()
 
     if scheduler.warnings:
         print("Warnings:")

@@ -132,10 +132,12 @@ def main(args):
     #           epochs=1, #60,
     #           callbacks=[print_callback])
 
+    logger.log_event_start(Event.TRAIN)
     history = model.fit(x, y,
               batch_size=128,
               epochs=1,
               validation_split=0.2)
+    logger.log_event_end(Event.TRAIN)
 
 
 

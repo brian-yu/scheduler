@@ -253,13 +253,17 @@ try:
     for epoch in range(1, args.epochs+1):
         epoch_start_time = time.time()
 
+        logger.log_event_start(Event.RESTORE)
         checkpoint_dir = f"checkpoints/{args.job}"
         ckpt = os.path.join(checkpoint_dir, f"latest_model_{args.job}.pt")
         if os.path.exists(ckpt):
             print(f"Restoring model from {ckpt}")
             model = torch.load(ckpt)
+        logger.log_event_end(Event.RESTORE)
 
+        logger.log_event_start(Event.TRAIN)
         train()
+        logger.log_event_end(Event.TRAIN)
         val_loss, val_acc = evaluate(val_data)
         logger.log_val_acc(val_acc)
         logger.log_val_loss(val_loss)
@@ -275,7 +279,9 @@ try:
         else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
             lr /= 4.0
+        logger.log_event_start(Event.SAVE)
         torch.save(model, ckpt)
+        logger.log_event_end(Event.SAVE)
 except KeyboardInterrupt:
     print('-' * 89)
     print('Exiting from training early')
