@@ -1,13 +1,16 @@
 import os
+from collections import defaultdict
 
-
-
+from constants import Event
 
 class LogAnalyzer:
 
-    def __init__(self):
+    def __init__(self, scheduler_log_path):
         self.job_start_times = {}
         self.job_end_times = {}
+
+        self.job_min_loss = {}
+        self.job_max_acc = {}
 
         self.start_time = None
         self.end_time = None
@@ -46,27 +49,65 @@ class LogAnalyzer:
         self.job_end_times[job_name] = max(self.job_end_times[job_name], time)
 
     def add_log(self, filename):
-        with open(filename) as f:
-            lines = [self.parse_line(line) for line in f.readlines()]
-            # print(lines)
 
-            for job_name, action, time in lines:
-                if action == "start":
-                    self.update_job_start(job_name, time)
-                elif action == "end":
-                    self.update_job_end(job_name, time)
+        self.worker_save_restore_time = 0
+
+        with open(filename) as f:
+            lines = f.readlines()
+            for line in lines:
+                self.process_line(line)
                 
 
-    def parse_line(self, line):
-        job_name, action, time = line.rstrip("\n").split(",")
-        return job_name, action, float(time)
+    def process_line(self, line):
+        tokens = line.rstrip("\n").split()
+        job_name = tokens[0]
+        event = Event(tokens[1])
+
+        if event == Event.TRAIN:
+            action = tokens[2]
+            time = float(tokens[3])
+
+            if action == "START":
+                self.update_job_start(job_name, time - self.worker_save_restore_time)
+            elif action == "END":
+                self.update_job_end(job_name, time - self.worker_save_restore_time)
+
+        if event == Event.SAVE:
+            action = tokens[2]
+            time = float(tokens[3])
+
+            if action == "START":
+                self.worker_save_start = time
+            elif action == "END":
+                self.worker_save_restore_time += time - self.worker_save_start
+
+        if event == Event.RESTORE:
+            action = tokens[2]
+            time = float(tokens[3])
+
+            if action == "START":
+                self.worker_restore_start = time
+            elif action == "END":
+                self.worker_save_restore_time += time - self.worker_restore_start
+
+        elif event == Event.VAL_ACC:
+            acc = float(tokens[2])
+            if job_name not in self.job_max_acc:
+                self.job_max_acc[job_name] = acc
+            self.job_max_acc[job_name] = max(self.job_max_acc[job_name], acc)
+
+        elif event == Event.VAL_LOSS:
+            loss = float(tokens[2])
+            if job_name not in self.job_min_loss:
+                self.job_min_loss[job_name] = loss
+            self.job_min_loss[job_name] = min(self.job_min_loss[job_name], loss)
 
 
 
 def main():
     log_folder = './log_folder'
 
-    analyzer = LogAnalyzer()
+    analyzer = LogAnalyzer(os.path.join(log_folder, 'scheduler_log'))
 
     for filename in os.listdir(log_folder):
         if filename.startswith("worker"): 
@@ -76,6 +117,8 @@ def main():
 
     print(analyzer.get_makespan())
     print(analyzer.get_job_completion_times())
+    print(analyzer.job_max_acc)
+    print(analyzer.job_min_loss)
 
 
 

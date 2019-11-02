@@ -221,8 +221,8 @@ class Scheduler:
     def save_logs(self):
         with open('log_folder/scheduler_log', 'w') as f:
             for job in self.jobs:
-                data = [job.job_name, job.epochs, job.executable]
-                f.write(f"{" ".join(data)}\n")
+                data = [job.job_name, str(job.epochs), job.executable]
+                f.write(" ".join(data) + "\n")
 
 NUM_CV_JOBS = 7
 # NUM_EPOCHS_LO = 4 # will be 25
@@ -253,28 +253,28 @@ if __name__ == "__main__":
         job_id = len(jobs)
         jobs.append(
             Job(job_name=f"job_{job_id}",
-                epochs=get_num_epochs(2, 2),
+                epochs=get_num_epochs(25, 30),
                 executable='alexnet.py'))
     
     for i in range(NUM_CV_JOBS):
         job_id = len(jobs)
         jobs.append(
             Job(job_name=f"job_{job_id}",
-                epochs=get_num_epochs(2, 2),
+                epochs=get_num_epochs(80, 100),
                 executable='lstm_seq2seq.py'))
 
     for i in range(NUM_CV_JOBS):
         job_id = len(jobs)
         jobs.append(
             Job(job_name=f"job_{job_id}",
-                epochs=get_num_epochs(2, 2),
+                epochs=get_num_epochs(35, 40),
                 executable='transformer/main.py'))
 
     for i in range(NUM_CV_JOBS):
         job_id = len(jobs)
         jobs.append(
             Job(job_name=f"job_{job_id}",
-                epochs=get_num_epochs(2, 2),
+                epochs=get_num_epochs(50, 60),
                 executable='lstm_text_generation.py'))
 
     random.shuffle(jobs)
