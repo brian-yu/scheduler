@@ -164,25 +164,38 @@ class LogAnalyzer:
         print("Makespan discounting save and restore times")
         print(f"{' ' * 4}{self.get_makespan()}")
         print("Job Name\tEpochs\tExecutable\t\tCompletion Time\t\tBest Acc.\tBest Loss")
-        for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
-            num_epochs = self.job_epochs[job]
-            executable = self.job_executable[job]
-            completion_time = self.job_end_times[job] - self.job_start_times[job]
-            best_acc = self.job_max_acc[job]
-            best_loss = self.job_min_loss[job]
-            print(f"{job}\t\t{num_epochs}\t{executable:20.20}\t{completion_time:.2f}\t\t\t{best_acc:.4f}\t\t{best_loss:.4f}")
+
+        with open('jobs.csv', 'w') as f:
+            f.write("Job Name,Epochs,Executable,Completion Time,Best Acc.,Best Loss\n")
+            for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
+                num_epochs = self.job_epochs[job]
+                executable = self.job_executable[job]
+                completion_time = self.job_end_times[job] - self.job_start_times[job]
+                best_acc = self.job_max_acc[job]
+                best_loss = self.job_min_loss[job]
+                print(f"{job}\t\t{num_epochs}\t{executable:20.20}\t{completion_time:.2f}\t\t\t{best_acc:.4f}\t\t{best_loss:.4f}")
+
+                f.write(f"{job},{num_epochs},{executable},{completion_time},{best_acc},{best_loss}\n")
 
         print("Job accuracies.")
-        for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
-            print(job)
-            print([acc for _, acc in self.job_acc[job]])
-            # print(self.job_acc[job])
+        with open('accuracies.txt', 'w') as f:
+            for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
+                print(job)
+                arr = [acc for _, acc in self.job_acc[job]]
+                print(arr)
+                # print(self.job_acc[job])
+                f.write(f"{job}\n")
+                f.write(f"{arr}\n")
 
         print("Job losses.")
-        for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
-            print(job)
-            print([loss for _, loss in self.job_loss[job]])
-            # print(self.job_loss[job])
+        with open('losses.txt', 'w') as f:
+            for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
+                print(job)
+                arr = [loss for _, loss in self.job_loss[job]]
+                print(arr)
+                f.write(f"{job}\n")
+                f.write(f"{arr}\n")
+                # print(self.job_loss[job])
 
 
 
