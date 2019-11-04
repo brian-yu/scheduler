@@ -121,7 +121,7 @@ class LogAnalyzer:
 
         # row_format ="{:>15}" * 6
 
-        for job in sorted(self.job_epochs.keys()):
+        for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
             num_epochs = self.job_epochs[job]
             executable = self.job_executable[job]
             completion_time = self.job_end_times[job] - self.job_start_times[job]
