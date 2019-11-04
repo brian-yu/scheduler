@@ -15,8 +15,14 @@ class LogAnalyzer:
         self.start_time = None
         self.end_time = None
 
+        self.real_start_time = None
+        self.real_end_time
+
     def get_makespan(self):
         return self.end_time - self.start_time
+
+    def get_real_makespan(self):
+        return self.real_end_time - self.real_start_time
 
     def get_job_completion_times(self):
         completion_times = []
@@ -69,8 +75,10 @@ class LogAnalyzer:
 
             if action == "START":
                 self.update_job_start(job_name, time - self.worker_save_restore_time)
+                self.real_start_time = min(self.real_start_time, time)
             elif action == "END":
                 self.update_job_end(job_name, time - self.worker_save_restore_time)
+                self.real_end_time = max(self.real_end_time, time)
 
         if event == Event.SAVE:
             action = tokens[2]
@@ -115,9 +123,16 @@ def main():
             print(path)
             analyzer.add_log(path)
 
+
+    print("Real makespan")
     print(analyzer.get_makespan())
+    print("Makespan discounting save and restore times")
+    print(analyzer.get_makespan())
+    print("Job completion times")
     print(analyzer.get_job_completion_times())
+    print("Job max accuracies")
     print(analyzer.job_max_acc)
+    print("Job min losses")
     print(analyzer.job_min_loss)
 
 
