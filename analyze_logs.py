@@ -126,7 +126,7 @@ class LogAnalyzer:
             best_acc = self.job_max_acc[job]
             best_loss = self.job_min_loss[job]
 
-            print(f"{job}\t{num_epochs}\t{executable}\t\t{completion_time:.2f}\t\t{best_acc:.4f}\t\t{best_loss:.4f}")
+            print(f"{job}\t\t{num_epochs}\t{executable}\t\t{completion_time:.2f}\t\t{best_acc:.4f}\t\t{best_loss:.4f}")
 
 
 
