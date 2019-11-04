@@ -74,6 +74,8 @@ class LogAnalyzer:
         job_name = tokens[0]
         event = Event(tokens[1])
 
+        print(self.worker_save_restore_time)
+
         if event == Event.TRAIN:
             action = tokens[2]
             time = float(tokens[3])
@@ -123,7 +125,6 @@ def main():
     analyzer = LogAnalyzer(os.path.join(log_folder, 'scheduler_log'))
 
     for filename in os.listdir(log_folder):
-        print(filename)
         if filename.startswith("worker"): 
             path = os.path.join(log_folder, filename)
             print(path)
