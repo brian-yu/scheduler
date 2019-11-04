@@ -12,6 +12,9 @@ class LogAnalyzer:
         self.job_min_loss = {}
         self.job_max_acc = {}
 
+        self.job_executable = {}
+        self.job_epochs = {}
+
         self.start_time = float('inf')
         self.end_time = 0
 
@@ -45,6 +48,14 @@ class LogAnalyzer:
             return
 
         self.job_end_times[job_name] = max(self.job_end_times[job_name], time)
+
+    def add_scheduler_log(self, path):
+        with open(filename) as f:
+            lines = [line.rstrip('\n') for line in f.readlines()]
+            for line in lines:
+                job_name, num_epochs, executable = line.split()
+                self.job_executable[job_name] = executable
+                self.job_epochs[job_name] = num_epochs
 
     def add_log(self, filename):
 
@@ -105,6 +116,18 @@ class LogAnalyzer:
                 self.job_min_loss[job_name] = loss
             self.job_min_loss[job_name] = min(self.job_min_loss[job_name], loss)
 
+    def job_info(self):
+        print("Job Name\t\tNum. Epochs\t\tExecutable\t\tCompletion Time\t\tBest Acc.\t\tBest Loss")
+
+        for job in sorted(self.job_epochs.keys()):
+            num_epochs = self.job_epochs[job]
+            executable = self.job_executable[job]
+            completion_time = self.job_end_times[job] - self.job_start_times[job]
+            best_acc = self.job_max_acc[job]
+            best_loss = self.job_min_loss[job]
+
+            print(f"{job}\t\t{num_epochs}\t\t{executable}\t\t{completion_time}\t\t{best_acc}\t\t{best_loss}")
+
 
 
 def main():
@@ -117,18 +140,23 @@ def main():
             path = os.path.join(log_folder, filename)
             print(path)
             analyzer.add_log(path)
+        elif filename.startswith("scheduler"):
+            path = os.path.join(log_folder, filename)
+            print(path)
+            analyzer.add_scheduler_log(path)
 
 
     print("Real makespan")
     print(analyzer.get_real_makespan())
     print("Makespan discounting save and restore times")
     print(analyzer.get_makespan())
-    print("Job completion times")
-    print(analyzer.get_job_completion_times())
-    print("Job max accuracies")
-    print(analyzer.job_max_acc)
-    print("Job min losses")
-    print(analyzer.job_min_loss)
+    # print("Job completion times")
+    # print(analyzer.get_job_completion_times())
+    # print("Job max accuracies")
+    # print(analyzer.job_max_acc)
+    # print("Job min losses")
+    # print(analyzer.job_min_loss)
+    analyzer.job_info()
 
 
 
