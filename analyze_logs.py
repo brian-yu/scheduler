@@ -61,11 +61,11 @@ class LogAnalyzer:
     def add_logs(self):
         for filename in os.listdir(self.log_folder):
             if filename.startswith("worker"): 
-                path = os.path.join(log_folder, filename)
+                path = os.path.join(self.log_folder, filename)
                 print(path)
                 self.add_log(path)
             elif filename.startswith("scheduler"):
-                path = os.path.join(log_folder, filename)
+                path = os.path.join(self.log_folder, filename)
                 print(path)
                 self.add_scheduler_log(path)
 
