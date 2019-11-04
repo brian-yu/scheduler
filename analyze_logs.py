@@ -117,8 +117,10 @@ class LogAnalyzer:
             self.job_min_loss[job_name] = min(self.job_min_loss[job_name], loss)
 
     def info(self):
-        print(f"Real makespan: {self.get_real_makespan()}")
-        print(f"Makespan discounting save and restore times: {self.get_makespan()}")
+        print("Real makespan")
+        print(f"{" "* 4}{self.get_real_makespan()}")
+        print("Makespan discounting save and restore times")
+        print(f"{" "* 4}{self.get_makespan()}")
         print("Job Name\tEpochs\tExecutable\t\tCompletion Time\t\tBest Acc.\tBest Loss")
         for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
             num_epochs = self.job_epochs[job]
