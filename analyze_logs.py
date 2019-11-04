@@ -18,6 +18,8 @@ class LogAnalyzer:
         self.real_start_time = float('inf')
         self.real_end_time = 0
 
+
+
     def get_makespan(self):
         return self.end_time - self.start_time
 
@@ -62,6 +64,8 @@ class LogAnalyzer:
             lines = f.readlines()
             for line in lines:
                 self.process_line(line)
+
+        print(self.worker_save_restore_time)
                 
 
     def process_line(self, line):
@@ -126,6 +130,8 @@ def main():
 
     print("Real makespan")
     print(analyzer.get_makespan())
+    print("Time spent during save and restore")
+    print(analyzer.worker_save_restore_time)
     print("Makespan discounting save and restore times")
     print(analyzer.get_makespan())
     print("Job completion times")
