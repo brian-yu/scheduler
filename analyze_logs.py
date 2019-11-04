@@ -119,7 +119,7 @@ class LogAnalyzer:
     def job_info(self):
         print("Job Name\tEpochs\tExecutable\t\tCompletion Time\t\tBest Acc.\t\tBest Loss")
 
-        row_format ="{:>15}" * 6
+        # row_format ="{:>15}" * 6
 
         for job in sorted(self.job_epochs.keys()):
             num_epochs = self.job_epochs[job]
@@ -127,8 +127,8 @@ class LogAnalyzer:
             completion_time = self.job_end_times[job] - self.job_start_times[job]
             best_acc = self.job_max_acc[job]
             best_loss = self.job_min_loss[job]
-            print(row_format.format(job, num_epochs, executable, completion_time, best_acc, best_loss))
-            # print(f"{job}\t\t{num_epochs}\t{executable}\t\t{completion_time:.2f}\t\t{best_acc:.4f}\t\t{best_loss:.4f}")
+            # print(row_format.format(job, num_epochs, executable, completion_time, best_acc, best_loss))
+            print(f"{job}\t\t{num_epochs}\t{executable:10.10}\t\t{completion_time:.2f}\t\t{best_acc:.4f}\t\t{best_loss:.4f}")
 
 
 
