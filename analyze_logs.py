@@ -117,7 +117,7 @@ class LogAnalyzer:
             self.job_min_loss[job_name] = min(self.job_min_loss[job_name], loss)
 
     def job_info(self):
-        print("Job Name\tEpochs\tExecutable\t\tCompletion Time\t\tBest Acc.\t\tBest Loss")
+        print("Job Name\tEpochs\tExecutable\t\tCompletion Time\t\tBest Acc.\tBest Loss")
 
         # row_format ="{:>15}" * 6
 
@@ -128,7 +128,7 @@ class LogAnalyzer:
             best_acc = self.job_max_acc[job]
             best_loss = self.job_min_loss[job]
             # print(row_format.format(job, num_epochs, executable, completion_time, best_acc, best_loss))
-            print(f"{job}\t\t{num_epochs}\t{executable:20.20}\t\t{completion_time:.2f}\t\t{best_acc:.4f}\t\t{best_loss:.4f}")
+            print(f"{job}\t\t{num_epochs}\t{executable:20.20}\t{completion_time:.2f}\t\t\t{best_acc:.4f}\t\t{best_loss:.4f}")
 
 
 
