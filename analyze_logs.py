@@ -172,12 +172,12 @@ class LogAnalyzer:
         print("Job accuracies.")
         for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
             print(job)
-            print(self.job_acc[job])
+            print([acc for _, acc in self.job_acc[job]])
 
         print("Job losses.")
         for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
             print(job)
-            print(self.job_loss[job])
+            print([loss for _, loss in self.job_loss[job]])
 
 
 
