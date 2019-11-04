@@ -116,18 +116,18 @@ class LogAnalyzer:
                 self.job_min_loss[job_name] = loss
             self.job_min_loss[job_name] = min(self.job_min_loss[job_name], loss)
 
-    def job_info(self):
+    def info(self):
+        print("Real makespan")
+        print(f"\t{self.get_real_makespan()}")
+        print("Makespan discounting save and restore times")
+        print(f"\t{self.get_makespan()}")
         print("Job Name\tEpochs\tExecutable\t\tCompletion Time\t\tBest Acc.\tBest Loss")
-
-        # row_format ="{:>15}" * 6
-
         for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
             num_epochs = self.job_epochs[job]
             executable = self.job_executable[job]
             completion_time = self.job_end_times[job] - self.job_start_times[job]
             best_acc = self.job_max_acc[job]
             best_loss = self.job_min_loss[job]
-            # print(row_format.format(job, num_epochs, executable, completion_time, best_acc, best_loss))
             print(f"{job}\t\t{num_epochs}\t{executable:20.20}\t{completion_time:.2f}\t\t\t{best_acc:.4f}\t\t{best_loss:.4f}")
 
 
@@ -147,18 +147,7 @@ def main():
             print(path)
             analyzer.add_scheduler_log(path)
 
-
-    print("Real makespan")
-    print(analyzer.get_real_makespan())
-    print("Makespan discounting save and restore times")
-    print(analyzer.get_makespan())
-    # print("Job completion times")
-    # print(analyzer.get_job_completion_times())
-    # print("Job max accuracies")
-    # print(analyzer.job_max_acc)
-    # print("Job min losses")
-    # print(analyzer.job_min_loss)
-    analyzer.job_info()
+    analyzer.info()
 
 
 
