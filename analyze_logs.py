@@ -74,7 +74,7 @@ class LogAnalyzer:
         job_name = tokens[0]
         event = Event(tokens[1])
 
-        print(self.worker_save_restore_time)
+        # print(self.worker_save_restore_time)
 
         if event == Event.TRAIN:
             action = tokens[2]
@@ -82,9 +82,11 @@ class LogAnalyzer:
 
             if action == "START":
                 self.update_job_start(job_name, time - self.worker_save_restore_time)
+                self.start_time = min(self.start_time, time - self.worker_save_restore_time)
                 self.real_start_time = min(self.real_start_time, time)
             elif action == "END":
                 self.update_job_end(job_name, time - self.worker_save_restore_time)
+                self.end_time = max(self.end_time, time - self.worker_save_restore_time)
                 self.real_end_time = max(self.real_end_time, time)
 
         if event == Event.SAVE:
