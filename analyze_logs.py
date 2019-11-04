@@ -152,6 +152,9 @@ class LogAnalyzer:
             self.job_loss[job_name].append((prev_time, loss))
 
         if time:
+            if time and prev_time:
+                if time < prev_time:
+                    raise Exception("prev_time should be earlier than time")
             return time
         return prev_time
 
@@ -172,14 +175,14 @@ class LogAnalyzer:
         print("Job accuracies.")
         for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
             print(job)
-            # print([acc for _, acc in self.job_acc[job]])
-            print(self.job_acc[job])
+            print([acc for _, acc in self.job_acc[job]])
+            # print(self.job_acc[job])
 
         print("Job losses.")
         for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
             print(job)
-            # print([loss for _, loss in self.job_loss[job]])
-            print(self.job_loss[job])
+            print([loss for _, loss in self.job_loss[job]])
+            # print(self.job_loss[job])
 
 
 
