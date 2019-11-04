@@ -49,7 +49,7 @@ class LogAnalyzer:
 
         self.job_end_times[job_name] = max(self.job_end_times[job_name], time)
 
-    def add_scheduler_log(self, path):
+    def add_scheduler_log(self, filename):
         with open(filename) as f:
             lines = [line.rstrip('\n') for line in f.readlines()]
             for line in lines:
