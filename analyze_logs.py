@@ -151,7 +151,9 @@ class LogAnalyzer:
                 raise Exception("prev_time should not be None")
             self.job_loss[job_name].append((prev_time, loss))
 
-        return time
+        if time:
+            return time
+        return prev_time
 
     def info(self):
         print("Real makespan")
