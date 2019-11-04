@@ -65,6 +65,7 @@ class LogAnalyzer:
             for line in lines:
                 self.process_line(line)
 
+        print("Time spent during save and restore")
         print(self.worker_save_restore_time)
                 
 
@@ -122,6 +123,7 @@ def main():
     analyzer = LogAnalyzer(os.path.join(log_folder, 'scheduler_log'))
 
     for filename in os.listdir(log_folder):
+        print(filename)
         if filename.startswith("worker"): 
             path = os.path.join(log_folder, filename)
             print(path)
@@ -130,8 +132,6 @@ def main():
 
     print("Real makespan")
     print(analyzer.get_makespan())
-    print("Time spent during save and restore")
-    print(analyzer.worker_save_restore_time)
     print("Makespan discounting save and restore times")
     print(analyzer.get_makespan())
     print("Job completion times")
