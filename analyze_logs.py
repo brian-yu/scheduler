@@ -5,7 +5,10 @@ from constants import Event
 
 class LogAnalyzer:
 
-    def __init__(self, scheduler_log_path):
+    def __init__(self, log_folder):
+
+        self.log_folder = log_folder
+
         self.job_start_times = {}
         self.job_end_times = {}
 
@@ -14,6 +17,9 @@ class LogAnalyzer:
 
         self.job_executable = {}
         self.job_epochs = {}
+
+        self.job_acc = defaultdict(list)
+        self.job_loss = defaultdict(list)
 
         self.start_time = float('inf')
         self.end_time = 0
@@ -49,6 +55,23 @@ class LogAnalyzer:
 
         self.job_end_times[job_name] = max(self.job_end_times[job_name], time)
 
+    def add_logs(self):
+        for filename in os.listdir(self.log_folder):
+            if filename.startswith("worker"): 
+                path = os.path.join(log_folder, filename)
+                print(path)
+                self.add_log(path)
+            elif filename.startswith("scheduler"):
+                path = os.path.join(log_folder, filename)
+                print(path)
+                self.add_scheduler_log(path)
+
+        for arr in self.job_acc.values():
+            arr.sort()
+
+        for arr in self.job_loss.values():
+            arr.sort()
+
     def add_scheduler_log(self, filename):
         with open(filename) as f:
             lines = [line.rstrip('\n') for line in f.readlines()]
@@ -63,15 +86,17 @@ class LogAnalyzer:
 
         with open(filename) as f:
             lines = f.readlines()
+            prev_time = None
             for line in lines:
-                self.process_line(line)
+                prev_time = self.process_line(line, prev_time)
 
-    def process_line(self, line):
+    def process_line(self, line, prev_time = None):
         tokens = line.rstrip("\n").split()
         job_name = tokens[0]
         event = Event(tokens[1])
 
         # print(self.worker_save_restore_time)
+        time = None
 
         if event == Event.TRAIN:
             action = tokens[2]
@@ -110,11 +135,20 @@ class LogAnalyzer:
                 self.job_max_acc[job_name] = acc
             self.job_max_acc[job_name] = max(self.job_max_acc[job_name], acc)
 
+            if not prev_time:
+                raise Exception("prev_time should not be None")
+            self.job_acc[job_name].append((prev_time, acc))
+
         elif event == Event.VAL_LOSS:
             loss = float(tokens[2])
             if job_name not in self.job_min_loss:
                 self.job_min_loss[job_name] = loss
             self.job_min_loss[job_name] = min(self.job_min_loss[job_name], loss)
+            if not prev_time:
+                raise Exception("prev_time should not be None")
+            self.job_loss[job_name].append((prev_time, loss))
+
+        return time
 
     def info(self):
         print("Real makespan")
@@ -130,22 +164,25 @@ class LogAnalyzer:
             best_loss = self.job_min_loss[job]
             print(f"{job}\t\t{num_epochs}\t{executable:20.20}\t{completion_time:.2f}\t\t\t{best_acc:.4f}\t\t{best_loss:.4f}")
 
+        print("Job accuracies.")
+        for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
+            print(job)
+            print(self.job_acc[job])
+
+        print("Job losses.")
+        for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
+            print(job)
+            print(self.job_loss[job])
+
+
 
 
 def main():
     log_folder = './log_folder'
 
-    analyzer = LogAnalyzer(os.path.join(log_folder, 'scheduler_log'))
+    analyzer = LogAnalyzer(log_folder)
 
-    for filename in os.listdir(log_folder):
-        if filename.startswith("worker"): 
-            path = os.path.join(log_folder, filename)
-            print(path)
-            analyzer.add_log(path)
-        elif filename.startswith("scheduler"):
-            path = os.path.join(log_folder, filename)
-            print(path)
-            analyzer.add_scheduler_log(path)
+    
 
     analyzer.info()
 
