@@ -12,8 +12,8 @@ class LogAnalyzer:
         self.job_min_loss = {}
         self.job_max_acc = {}
 
-        self.start_time = None
-        self.end_time = None
+        self.start_time = float('inf')
+        self.end_time = 0
 
         self.real_start_time = float('inf')
         self.real_end_time = 0
@@ -33,11 +33,6 @@ class LogAnalyzer:
         return completion_times
 
     def update_job_start(self, job_name, time):
-        if not self.start_time:
-            self.start_time = time
-        else:
-            self.start_time = min(self.start_time, time)
-
         if job_name not in self.job_start_times:
             self.job_start_times[job_name] = time
             return
@@ -45,11 +40,6 @@ class LogAnalyzer:
         self.job_start_times[job_name] = min(self.job_start_times[job_name], time)
 
     def update_job_end(self, job_name, time):
-        if not self.end_time:
-            self.end_time = time
-        else:
-            self.end_time = max(self.end_time, time)
-
         if job_name not in self.job_end_times:
             self.job_end_times[job_name] = time
             return
@@ -64,10 +54,6 @@ class LogAnalyzer:
             lines = f.readlines()
             for line in lines:
                 self.process_line(line)
-
-        print("Time spent during save and restore")
-        print(self.worker_save_restore_time)
-                
 
     def process_line(self, line):
         tokens = line.rstrip("\n").split()
