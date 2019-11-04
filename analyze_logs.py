@@ -15,8 +15,8 @@ class LogAnalyzer:
         self.start_time = None
         self.end_time = None
 
-        self.real_start_time = None
-        self.real_end_time = None
+        self.real_start_time = float('inf')
+        self.real_end_time = 0
 
     def get_makespan(self):
         return self.end_time - self.start_time
