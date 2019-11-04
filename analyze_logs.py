@@ -134,7 +134,7 @@ def main():
 
 
     print("Real makespan")
-    print(analyzer.get_makespan())
+    print(analyzer.get_real_makespan())
     print("Makespan discounting save and restore times")
     print(analyzer.get_makespan())
     print("Job completion times")
