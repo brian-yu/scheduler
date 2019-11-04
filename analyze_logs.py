@@ -117,7 +117,7 @@ class LogAnalyzer:
             self.job_min_loss[job_name] = min(self.job_min_loss[job_name], loss)
 
     def job_info(self):
-        print("Job Name\t\tNum. Epochs\t\tExecutable\t\tCompletion Time\t\tBest Acc.\t\tBest Loss")
+        print("Job Name\tNum. Epochs\tExecutable\t\tCompletion Time\t\tBest Acc.\t\tBest Loss")
 
         for job in sorted(self.job_epochs.keys()):
             num_epochs = self.job_epochs[job]
@@ -126,7 +126,7 @@ class LogAnalyzer:
             best_acc = self.job_max_acc[job]
             best_loss = self.job_min_loss[job]
 
-            print(f"{job}\t\t{num_epochs}\t\t{executable}\t\t{completion_time}\t\t{best_acc}\t\t{best_loss}")
+            print(f"{job}\t{num_epochs}\t{executable}\t\t{completion_time:.2f}\t\t{best_acc:.4f}\t\t{best_loss:.4f}")
 
 
 
