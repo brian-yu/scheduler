@@ -165,7 +165,7 @@ class LogAnalyzer:
         print(f"{' ' * 4}{self.get_makespan()}")
         print("Job Name\tEpochs\tExecutable\t\tCompletion Time\t\tBest Acc.\tBest Loss")
 
-        with open('jobs.csv', 'w') as f:
+        with open(os.path.join(self.log_folder, 'jobs.csv'), 'w') as f:
             f.write("Job Name,Epochs,Executable,Completion Time,Best Acc.,Best Loss\n")
             for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
                 num_epochs = self.job_epochs[job]
@@ -178,7 +178,7 @@ class LogAnalyzer:
                 f.write(f"{job},{num_epochs},{executable},{completion_time},{best_acc},{best_loss}\n")
 
         print("Job accuracies.")
-        with open('accuracies.txt', 'w') as f:
+        with open(os.path.join(self.log_folder, 'accuracies.txt'), 'w') as f:
             for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
                 print(job)
                 arr = [acc for _, acc in self.job_acc[job]]
@@ -188,7 +188,7 @@ class LogAnalyzer:
                 f.write(f"{arr}\n")
 
         print("Job losses.")
-        with open('losses.txt', 'w') as f:
+        with open(os.path.join(self.log_folder, 'losses.txt'), 'w') as f:
             for job in sorted(self.job_epochs.keys(), key=lambda job: int(job.split('_')[1])):
                 print(job)
                 arr = [loss for _, loss in self.job_loss[job]]
