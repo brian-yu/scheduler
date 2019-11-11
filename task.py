@@ -6,6 +6,7 @@ import os
 import zipfile
 import tensorflow as tf
 import numpy as np
+import time
 
 from constants import Event, Logger
 
@@ -353,6 +354,7 @@ def main(_):
                     config=config) as mon_sess:
 
                 print('training')
+                start_time = time.time()
                 # logger.log_event_start(j_name, Event.TRAIN)
 
                 for j in range(0, steps - remaining, step_size):
@@ -371,7 +373,7 @@ def main(_):
                     #     with open('./log_folder/' + j_name + '_log', 'a') as f:
                     #         f.write('\nstep: ' + str(j) + "\tglobal_step: " +
                     #                 str(global_step.eval(session=mon_sess)))
-                print('finished training')
+                print(f'finished training in {time.time() - start_time} sec.')
                 # logger.log_event_end(j_name, Event.TRAIN)
 
                 # logger.log_event_start(j_name, Event.SAVE)
