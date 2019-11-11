@@ -6,7 +6,8 @@ import os
 import zipfile
 import tensorflow as tf
 import numpy as np
-import sys 
+import sys
+import time
 
 sys.path.append('.') # append directory with constants.py to path
 from constants import Event, Logger
@@ -330,6 +331,7 @@ def main(_):
             logger.log_event_end(Event.RESTORE)
 
             print('training')
+            start_time = time.time()
             logger.log_event_start(Event.TRAIN)
 
             for j in range(0, steps - remaining, step_size):
@@ -347,7 +349,7 @@ def main(_):
                 if (j % 400 == 0):
                     with open('./log_folder/' + j_name + '_log', 'a') as f:
                         f.write('\nstep: ' + str(j))
-            print('finished training')
+            print(f'finished training in {time.time() - start_time} sec.')
             logger.log_event_end(Event.TRAIN)
 
             logger.log_event_start(Event.SAVE)
