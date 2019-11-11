@@ -367,10 +367,10 @@ def main(_):
                             hold_prob2: 0.5
                         })
 
-                    if (global_step.eval(session=mon_sess) % 20 == 0):
-                        with open('./log_folder/' + j_name + '_log', 'a') as f:
-                            f.write('\nstep: ' + str(j) + "\tglobal_step: " +
-                                    str(global_step.eval(session=mon_sess)))
+                    # if (global_step.eval(session=mon_sess) % 20 == 0):
+                    #     with open('./log_folder/' + j_name + '_log', 'a') as f:
+                    #         f.write('\nstep: ' + str(j) + "\tglobal_step: " +
+                    #                 str(global_step.eval(session=mon_sess)))
                 print('finished training')
                 logger.log_event_end(j_name, Event.TRAIN)
 
@@ -382,8 +382,8 @@ def main(_):
         if FLAGS.validate:
             #evaluate the model performance in the current epoch
             with tf.Session(target=server.target) as sess:
-                with open('./log_folder/' + j_name + '_log', 'a') as f:
-                    f.write('\n\nevaluating the accuracy on the validation set')
+                # with open('./log_folder/' + j_name + '_log', 'a') as f:
+                #     f.write('\n\nevaluating the accuracy on the validation set')
 
                 # print(f"CHECKPOINT FOLDER: {train_folder}")
                 # ckpt = tf.train.latest_checkpoint(train_folder)
@@ -424,17 +424,17 @@ def main(_):
                 acc_list.append(acc_cv_)
                 auc_list.append(auc_cv_)
                 loss_list.append(loss_cv_)
-                with open('./log_folder/' + j_name + '_log', 'a') as f:
-                    f.write("\nAccuracy:" + str(acc_cv_) + "\tLoss:" +
-                            str(loss_cv_) + "\tAUC:" + str(auc_cv_))
+                # with open('./log_folder/' + j_name + '_log', 'a') as f:
+                #     f.write("\nAccuracy:" + str(acc_cv_) + "\tLoss:" +
+                #             str(loss_cv_) + "\tAUC:" + str(auc_cv_))
             # with open('')
         #num_epoch += 1
 
         if FLAGS.test:
             #Test the model performance after training
             with tf.Session(target=server.target) as sess:
-                with open('./log_folder/' + j_name + '_log', 'a') as f:
-                    f.write('\n\ntest the model accuracy after training')
+                # with open('./log_folder/' + j_name + '_log', 'a') as f:
+                #     f.write('\n\ntest the model accuracy after training')
 
                 ckpt = train_folder + "/latest_model_" + j_name + ".ckpt"
                 print(f"Restoring model from {ckpt}")
@@ -466,15 +466,15 @@ def main(_):
                 test_acc_ = round(np.mean(test_acc_list), 5)
                 test_auc_ = round(np.mean(test_auc_list), 5)
                 test_loss_ = round(np.mean(test_loss_list), 5)
-                with open('./log_folder/' + j_name + '_log', 'a') as f:
-                    f.write("\nTest Results are below:")
-                    f.write("\nAccuracy: " + str(test_acc_) + "\tLoss: " +
-                            str(test_loss_) + "\tAUC: " + str(test_auc_))
+                # with open('./log_folder/' + j_name + '_log', 'a') as f:
+                #     f.write("\nTest Results are below:")
+                #     f.write("\nAccuracy: " + str(test_acc_) + "\tLoss: " +
+                #             str(test_loss_) + "\tAUC: " + str(test_auc_))
 
-                with open('./loss_folder/loss_' + j_name, 'w') as f:
-                    f.write(str(test_loss_))
-                with open('./accuracy_folder/accuracy_' + j_name, 'w') as f:
-                    f.write(str(test_acc_))
+                # with open('./loss_folder/loss_' + j_name, 'w') as f:
+                #     f.write(str(test_loss_))
+                # with open('./accuracy_folder/accuracy_' + j_name, 'w') as f:
+                #     f.write(str(test_acc_))
 
 
 if __name__ == "__main__":
