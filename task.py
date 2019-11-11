@@ -50,7 +50,7 @@ def main(_):
             # Memory growth must be set before GPUs have been initialized
             print(e)
 
-    logger = Logger()
+    # logger = Logger()
 
     ps_hosts = FLAGS.ps_hosts.split(",")
     worker_hosts = FLAGS.worker_hosts.split(",")
@@ -148,7 +148,7 @@ def main(_):
             print(f"Worker: {server.target}")
 
 
-            logger.log_event_start(j_name, Event.BUILD)
+            # logger.log_event_start(j_name, Event.BUILD)
             # Build model...
 
             steps = len(train)
@@ -320,7 +320,7 @@ def main(_):
             matches = tf.equal(tf.argmax(y_pred, 1), tf.argmax(y_true, 1))
             acc = tf.reduce_mean(tf.cast(matches, tf.float32))
 
-            logger.log_event_end(j_name, Event.BUILD)
+            # logger.log_event_end(j_name, Event.BUILD)
 
         # The StopAtStepHook handles stopping after running given steps.
         hooks = [tf.train.StopAtStepHook(last_step=1000000)]
@@ -353,7 +353,7 @@ def main(_):
                     config=config) as mon_sess:
 
                 print('training')
-                logger.log_event_start(j_name, Event.TRAIN)
+                # logger.log_event_start(j_name, Event.TRAIN)
 
                 for j in range(0, steps - remaining, step_size):
                 # for j in range(0, 200, step_size):
@@ -372,12 +372,12 @@ def main(_):
                     #         f.write('\nstep: ' + str(j) + "\tglobal_step: " +
                     #                 str(global_step.eval(session=mon_sess)))
                 print('finished training')
-                logger.log_event_end(j_name, Event.TRAIN)
+                # logger.log_event_end(j_name, Event.TRAIN)
 
-                logger.log_event_start(j_name, Event.SAVE)
+                # logger.log_event_start(j_name, Event.SAVE)
                 saver.save(get_session(mon_sess),
                            train_folder + "/latest_model_" + j_name + ".ckpt")
-                logger.log_event_end(j_name, Event.SAVE)
+                # logger.log_event_end(j_name, Event.SAVE)
 
         if FLAGS.validate:
             #evaluate the model performance in the current epoch
