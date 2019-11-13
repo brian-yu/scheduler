@@ -368,7 +368,6 @@ def main(_):
                             hold_prob1: 0.5,
                             hold_prob2: 0.5
                         })
-                    time.sleep(1)
 
                     # if (global_step.eval(session=mon_sess) % 20 == 0):
                     #     with open('./log_folder/' + j_name + '_log', 'a') as f:
