@@ -88,7 +88,7 @@ def main(_):
     # IMG_SIZE = 80
 
     # epochs = 3
-    step_size = 8
+    step_size = 16
     IMG_SIZE_ALEXNET = 227
     validating_size = 40
     nodes_fc1 = 4096
@@ -368,6 +368,7 @@ def main(_):
                             hold_prob1: 0.5,
                             hold_prob2: 0.5
                         })
+                    time.sleep(1)
 
                     # if (global_step.eval(session=mon_sess) % 20 == 0):
                     #     with open('./log_folder/' + j_name + '_log', 'a') as f:
