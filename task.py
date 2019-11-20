@@ -127,16 +127,38 @@ def main(_):
                                                 IMG_SIZE_ALEXNET, 3)
     Y = np.array([i[1] for i in train], dtype=np.float32)
 
-    X_dataset = tf.data.Dataset.from_tensor_slices(X)
+    writer = tf.python_io.TFRecordWriter('./data/alexnet.tfrec')
+    for i in range(len(X)):
+        feature = {}
+        feature['X'] = tf.train.Feature(float_list=tf.train.FloatList(value = X[i].flatten()))
+        feature['Y'] = tf.train.Feature(float_list=tf.train.FloatList(value=Y[i]))
+        example = tf.train.Example(features = tf.train.Features(feature=feature))
+        serialized = example.SerializeToString()
+        writer.write(serialized)
+    writer.close()
+
+    def _parse_function(example_proto):
+        keys_to_features = {
+            'X': tf.FixedLenFeature((IMG_SIZE_ALEXNET, IMG_SIZE_ALEXNET, 3), tf.float32),
+            'Y': tf.FixedLenFeature((), tf.float32)
+        }
+        parsed_features = tf.parse_single_example(example_proto, keys_to_features)
+        return parsed_features['X'], parsed_features['Y']
+
+    dataset = tf.data.TFRecordDataset(filenames=['./data/alexnet.tfrec'])
+    # X_dataset = tf.data.Dataset.from_tensor_slices(X)
     # X_dataset.output_types = tf.float32
     # X_dataset.output_shapes = [None, IMG_SIZE_ALEXNET, IMG_SIZE_ALEXNET, 3]
-    Y_dataset = tf.data.Dataset.from_tensor_slices(Y)
+    # Y_dataset = tf.data.Dataset.from_tensor_slices(Y)
     # Y_dataset.output_types = tf.float32
     # Y_dataset.output_shapes = [None, output_classes]
-    train_dataset = tf.data.Dataset.zip((X_dataset, Y_dataset)).repeat().batch(step_size)
+    # train_dataset = tf.data.Dataset.zip((X_dataset, Y_dataset)).repeat().batch(step_size)
+
     # train_dataset = tf.data.Dataset.from_tensor_slices((X, Y)).repeat().batch(step_size)
+
+    train_dataset = dataset.map(_parse_function).repeat().batch(step_size)
     iterator = train_dataset.make_initializable_iterator()
-    next_train = iterator.get_next()
+    next_X, next_Y = iterator.get_next()
 
     cv_x = np.array([i[0] for i in cv]).reshape(-1, IMG_SIZE_ALEXNET,
                                                 IMG_SIZE_ALEXNET, 3)
@@ -174,8 +196,8 @@ def main(_):
             #     tf.float32,
             #     shape=[None, IMG_SIZE_ALEXNET, IMG_SIZE_ALEXNET, 3])
             # y_true = tf.placeholder(tf.float32, shape=[None, output_classes])
-            x = next_train[0]
-            y_true = next_train[1]
+            x = next_X
+            y_true = next_Y
 
             ##CONVOLUTION LAYER 1
             #Weights for layer 1
