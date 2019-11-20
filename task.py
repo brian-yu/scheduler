@@ -127,15 +127,16 @@ def main(_):
                                                 IMG_SIZE_ALEXNET, 3)
     Y = np.array([i[1] for i in train], dtype=np.float32)
 
-    writer = tf.python_io.TFRecordWriter('./data/alexnet.tfrec')
-    for i in range(len(X)):
-        feature = {}
-        feature['X'] = tf.train.Feature(float_list=tf.train.FloatList(value = X[i].flatten()))
-        feature['Y'] = tf.train.Feature(float_list=tf.train.FloatList(value=Y[i]))
-        example = tf.train.Example(features = tf.train.Features(feature=feature))
-        serialized = example.SerializeToString()
-        writer.write(serialized)
-    writer.close()
+    if not os.path.isfile('./data/alexnet.tfrec'):
+        writer = tf.io.TFRecordWriter('./data/alexnet.tfrec')
+        for i in range(len(X)):
+            feature = {}
+            feature['X'] = tf.train.Feature(float_list=tf.train.FloatList(value = X[i].flatten()))
+            feature['Y'] = tf.train.Feature(float_list=tf.train.FloatList(value=Y[i]))
+            example = tf.train.Example(features = tf.train.Features(feature=feature))
+            serialized = example.SerializeToString()
+            writer.write(serialized)
+        writer.close()
 
     def _parse_function(example_proto):
         keys_to_features = {
