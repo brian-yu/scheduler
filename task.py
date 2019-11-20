@@ -139,11 +139,12 @@ def main(_):
         writer.close()
 
     def _parse_function(example_proto):
+        print(example_proto)
         keys_to_features = {
-            'X': tf.FixedLenFeature((IMG_SIZE_ALEXNET, IMG_SIZE_ALEXNET, 3), tf.float32),
-            'Y': tf.FixedLenFeature((), tf.float32)
+            'X': tf.io.FixedLenFeature((IMG_SIZE_ALEXNET, IMG_SIZE_ALEXNET, 3), tf.float32),
+            'Y': tf.io.FixedLenFeature((), tf.float32)
         }
-        parsed_features = tf.parse_single_example(example_proto, keys_to_features)
+        parsed_features = tf.io.parse_single_example(example_proto, keys_to_features)
         return parsed_features['X'], parsed_features['Y']
 
     dataset = tf.data.TFRecordDataset(filenames=['./data/alexnet.tfrec'])
@@ -159,6 +160,7 @@ def main(_):
 
     train_dataset = dataset.map(_parse_function).repeat().batch(step_size)
     iterator = train_dataset.make_initializable_iterator()
+
     next_X, next_Y = iterator.get_next()
 
     cv_x = np.array([i[0] for i in cv]).reshape(-1, IMG_SIZE_ALEXNET,
@@ -389,7 +391,7 @@ def main(_):
                     hooks=hooks,
                     config=config) as mon_sess:
 
-                print('training')
+                print('=== TRAINING!')
                 start_time = time.time()
                 # logger.log_event_start(j_name, Event.TRAIN)
 
