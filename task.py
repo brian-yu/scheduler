@@ -142,7 +142,7 @@ def main(_):
         print(example_proto)
         keys_to_features = {
             'X': tf.io.FixedLenFeature((IMG_SIZE_ALEXNET, IMG_SIZE_ALEXNET, 3), tf.float32),
-            'Y': tf.io.FixedLenFeature((), tf.float32)
+            'Y': tf.io.FixedLenFeature((1), tf.float32)
         }
         parsed_features = tf.io.parse_single_example(example_proto, keys_to_features)
         return parsed_features['X'], parsed_features['Y']
