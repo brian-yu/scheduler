@@ -123,9 +123,9 @@ def main(_):
     train = train_data[:4800]
     cv = train_data[4800:]
 
-    X = np.array([i[0] for i in train]).reshape(-1, IMG_SIZE_ALEXNET,
+    X = np.array([i[0] for i in train], dtype=np.float32).reshape(-1, IMG_SIZE_ALEXNET,
                                                 IMG_SIZE_ALEXNET, 3)
-    Y = np.array([i[1] for i in train])
+    Y = np.array([i[1] for i in train], dtype=np.float32)
 
     # X_dataset = tf.data.Dataset.from_tensor_slices(X)
     # X_dataset.output_types = tf.float32
