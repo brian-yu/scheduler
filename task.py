@@ -127,6 +127,12 @@ def main(_):
                                                 IMG_SIZE_ALEXNET, 3)
     Y = np.array([i[1] for i in train])
 
+    X_dataset = tf.data.Dataset.from_tensor_slices(X)
+    Y_dataset = tf.data.Dataset.from_tensor_slices(Y)
+    train_dataset = tf.data.Dataset.zip((X_dataset, Y_dataset)).repeat().batch(step_size)
+    iterator = train_dataset.make_initializable_iterator()
+    next_train = iterator.get_next()
+
     cv_x = np.array([i[0] for i in cv]).reshape(-1, IMG_SIZE_ALEXNET,
                                                 IMG_SIZE_ALEXNET, 3)
     cv_y = np.array([i[1] for i in cv])
@@ -159,10 +165,12 @@ def main(_):
             #tf.reset_default_graph()
 
             #Defining Placeholders
-            x = tf.placeholder(
-                tf.float32,
-                shape=[None, IMG_SIZE_ALEXNET, IMG_SIZE_ALEXNET, 3])
-            y_true = tf.placeholder(tf.float32, shape=[None, output_classes])
+            # x = tf.placeholder(
+            #     tf.float32,
+            #     shape=[None, IMG_SIZE_ALEXNET, IMG_SIZE_ALEXNET, 3])
+            # y_true = tf.placeholder(tf.float32, shape=[None, output_classes])
+            x = next_train[0]
+            y_true = next_train[1]
 
             ##CONVOLUTION LAYER 1
             #Weights for layer 1
@@ -357,17 +365,22 @@ def main(_):
                 start_time = time.time()
                 # logger.log_event_start(j_name, Event.TRAIN)
 
+                mon_sess.run(iterator.initializer)
+
                 for j in range(0, steps - remaining, step_size):
                 # for j in range(0, 200, step_size):
                     #Feeding step_size-amount data with 0.5 keeping probabilities on DROPOUT LAYERS
-                    _, c = mon_sess.run(
-                        [train_op, cross_entropy],
+                    _, accuracy, loss = mon_sess.run(
+                        [train_op, acc, cross_entropy],
                         feed_dict={
-                            x: X[j:j + step_size],
-                            y_true: Y[j:j + step_size],
+                            # x: X[j:j + step_size],
+                            # y_true: Y[j:j + step_size],
                             hold_prob1: 0.5,
                             hold_prob2: 0.5
                         })
+
+                    if j % 50 == 0:
+                        print(f"j: {j}, acc: {accuracy}, loss: {loss}\n")
 
                     # if (global_step.eval(session=mon_sess) % 20 == 0):
                     #     with open('./log_folder/' + j_name + '_log', 'a') as f:
