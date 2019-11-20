@@ -128,7 +128,11 @@ def main(_):
     Y = np.array([i[1] for i in train])
 
     X_dataset = tf.data.Dataset.from_tensor_slices(X)
+    X_dataset.output_types = tf.float32
+    X_dataset.output_shapes = [None, IMG_SIZE_ALEXNET, IMG_SIZE_ALEXNET, 3]
     Y_dataset = tf.data.Dataset.from_tensor_slices(Y)
+    Y_dataset.output_types = tf.float32
+    Y_dataset.output_shapes = [None, output_classes]
     train_dataset = tf.data.Dataset.zip((X_dataset, Y_dataset)).repeat().batch(step_size)
     iterator = train_dataset.make_initializable_iterator()
     next_train = iterator.get_next()
