@@ -126,7 +126,8 @@ def main(_):
     X = np.array([i[0] for i in train], dtype=np.float32).reshape(-1, IMG_SIZE_ALEXNET,
                                                 IMG_SIZE_ALEXNET, 3)
     Y = np.array([i[1] for i in train], dtype=np.float32)
-
+    print(X.shape)
+    print(Y.shape)
     if not os.path.isfile('./data/alexnet.tfrec'):
         writer = tf.io.TFRecordWriter('./data/alexnet.tfrec')
         for i in range(len(X)):
