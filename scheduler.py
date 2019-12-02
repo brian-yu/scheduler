@@ -19,11 +19,13 @@ class Mode(Enum):
 # THESE MUST BE IPV4 ADDRESSES IN ORDER FOR FTP SERVER TO WORK.
 
 WORKER_HOSTS = [
-    '54.172.145.68',
-    '3.91.26.160',
-    '18.234.228.46',
-    '52.90.16.197',
-    '3.91.26.174',
+    # '54.172.145.68',
+    # '3.91.26.160',
+    # '18.234.228.46',
+    # '52.90.16.197',
+    # '3.91.26.174',
+    '54.86.29.194',
+    '54.198.210.208',
 ]
 
 class Job:
@@ -224,7 +226,9 @@ class Scheduler:
                 data = [job.job_name, str(job.epochs), job.executable]
                 f.write(" ".join(data) + "\n")
 
-NUM_CV_JOBS = 7
+# NUM_CV_JOBS = 7
+
+NUM_JOBS = 4
 # NUM_EPOCHS_LO = 4 # will be 25
 # NUM_EPOCHS_HI = 6 # will be 30
 
@@ -249,32 +253,32 @@ if __name__ == "__main__":
     # job_exec = "lstm_seq2seq.py"
     # job_exec = "alexnet.py"
     jobs = []
-    for i in range(NUM_CV_JOBS):
+    for i in range(NUM_JOBS // 4):
         job_id = len(jobs)
         jobs.append(
             Job(job_name=f"job_{job_id}",
                 epochs=get_num_epochs(25, 30),
                 executable='alexnet.py'))
     
-    for i in range(NUM_CV_JOBS):
+    for i in range(NUM_JOBS // 4):
         job_id = len(jobs)
         jobs.append(
             Job(job_name=f"job_{job_id}",
-                epochs=get_num_epochs(80, 100),
+                epochs=get_num_epochs(15, 20),
                 executable='lstm_seq2seq.py'))
 
-    for i in range(NUM_CV_JOBS):
+    for i in range(NUM_JOBS // 4):
         job_id = len(jobs)
         jobs.append(
             Job(job_name=f"job_{job_id}",
-                epochs=get_num_epochs(35, 40),
+                epochs=get_num_epochs(15, 20),
                 executable='transformer/main.py'))
 
-    for i in range(NUM_CV_JOBS):
+    for i in range(NUM_JOBS // 4):
         job_id = len(jobs)
         jobs.append(
             Job(job_name=f"job_{job_id}",
-                epochs=get_num_epochs(50, 60),
+                epochs=get_num_epochs(10, 15),
                 executable='lstm_text_generation.py'))
 
     random.shuffle(jobs)
