@@ -228,7 +228,7 @@ class Scheduler:
 
 # NUM_CV_JOBS = 7
 
-NUM_JOBS = 4
+NUM_JOBS = 8
 # NUM_EPOCHS_LO = 4 # will be 25
 # NUM_EPOCHS_HI = 6 # will be 30
 
