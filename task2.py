@@ -87,7 +87,7 @@ def main(_):
     # IMG_SIZE = 80
 
     # epochs = 3
-    step_size = 8
+    step_size = 128
     IMG_SIZE_ALEXNET = 227
     validating_size = 40
     nodes_fc1 = 4096
