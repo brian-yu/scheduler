@@ -394,7 +394,7 @@ def main(_):
                 start_time = time.time()
                 # logger.log_event_start(j_name, Event.TRAIN)
 
-                mon_sess.run(iterator.initializer)
+                # mon_sess.run(iterator.initializer)
 
                 for j in range(0, steps - remaining, step_size):
                 # for j in range(0, 200, step_size):
